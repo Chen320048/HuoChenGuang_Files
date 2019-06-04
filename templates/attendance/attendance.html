@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+var now = new Date(); //当前日期
+var url;
+var date_begin = '';
+var date_end = '';
+var status = '';
+var stuname = '';
+var today = formatDate(now)
+/*function add(){
+    $.messager.confirm('提醒', '确定要添加吗?',function (r) {
+        if (r){
+        url = '/attendance/save/';
+        $.get(url,function (resp) {
+            var resp = JSON.parse(resp)
+            if(resp.success == 1){
+                $('#datagrid').datagrid('reload');
+            }
+            else if (resp.success == 0){
+                $.messager.alert('错误', resp.errors, 'error');
+            }
+         })
+
+    };*/
+
+
+
+function add(){
+    $('#table-edit').hide()
+     $("#table-edit select").attr("disabled" ,"true");
+     $("#table-edit input").attr("disabled" ,"true");
+    $('#table-add').show()
+    $("#table-add select").removeAttr("disabled");  // 提交add学生考勤时,禁用掉修改表格的默认值,修改学生考勤时同理
+     $("#table-add input").removeAttr("disabled");
+    $('#dlg-edit').css('height','800px')
+	$('#dlg-edit').dialog('open').dialog('setTitle','添加');
+	$('#account_form').form('reset');
+	// $('#id_username').attr('readonly', false);
+	url = '/attendance/save/';
+}
+
+function edit(){
+    $('#table-add').hide()
+     $("#table-add input").attr("disabled" ,"true");
+     $("#table-add select").attr("disabled" ,"true");
+    $('#table-edit').show()
+     $("#table-edit input").removeAttr("disabled");
+     $("#table-edit select").removeAttr("disabled");
+    $('#dlg-edit').css('height','110px')
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+	    // $('#id_student').parent().parent().hide();
+		$('#dlg-edit').dialog('open').dialog('setTitle','修改');
+		$('#account_form').form('reset');
+		$('#account_form').form('load',row);
+		url = '/attendance/save/?id='+row.id;
+	}
+}
+function save(btn){
+	$('#account_form').form('submit',{
+		url: url,
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+function active(status){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row == null){
+		$.messager.alert('提醒', "请在列表中选择一个账号。", 'info');
+		return;
+	}
+
+	$.get('/account/change_active/?id='+row.id+'&status='+status, function(result){
+		result = eval('('+result+')');
+		if (result.success){
+			$('#datagrid').datagrid('reload');
+		} else {
+			$.messager.alert('错误', result.errors, 'error');
+		}
+	});
+}
+
+//搜索
+function search(value,name){
+    //date_begin = $('#date_begin').datebox('getValue'),
+    //date_end = $('#date_end').datebox('getValue');
+    if(name == 'type'){
+        status = value
+    }
+    if(name == 'name'){
+        stuname = value
+    }
+    if(name == 'all'){
+        status = ''
+    }
+	$('#datagrid').datagrid('reload',{  // 进行复合查询,(可控条件)
+        q:name,
+        keyword:value,
+        date_begin:date_begin,
+		date_end:date_end,
+        today:today,
+        stuname:stuname
+    });
+}
+
+
+
+function search_date() {
+    date_begin = $('#date_begin').datebox('getValue');
+    date_end = $('#date_end').datebox('getValue');
+    $('#datagrid').datagrid('reload',{
+        date_begin:date_begin,
+		date_end:date_end,
+    });
+}
+
+
+        var nowDayOfWeek = now.getDay(); //今天本周的第几天
+        var nowDay = now.getDate(); //当前日
+        var nowMonth = now.getMonth(); //当前月
+        var nowYear = now.getYear(); //当前年
+        nowYear += (nowYear < 2000) ? 1900 : 0; //
+
+        var lastMonthDate = new Date(); //上月日期
+        lastMonthDate.setDate(1);
+        lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+        var lastYear = lastMonthDate.getYear();
+        var lastMonth = lastMonthDate.getMonth();
+
+         //获得某月的天数
+    function getMonthDays(myMonth) {
+        var monthStartDate = new Date(nowYear, myMonth, 1);
+        var monthEndDate = new Date(nowYear, myMonth + 1, 1);
+        var days = (monthEndDate - monthStartDate) / (1000 * 60 * 60 * 24);
+        return days;
+    }
+
+//格式化日期：yyyy-MM-dd
+        function formatDate(date) {
+            var myyear = date.getFullYear();
+            var mymonth = date.getMonth() + 1;
+            var myweekday = date.getDate();
+
+            if (mymonth < 10) {
+                mymonth = "0" + mymonth;
+            }
+            if (myweekday < 10) {
+                myweekday = "0" + myweekday;
+            }
+            return (myyear + "-" + mymonth + "-" + myweekday);
+        }
+
+function monthdata() {
+            var monthStartDate = formatDate(new Date(nowYear, nowMonth, 1));
+            var monthEndDate = formatDate(new Date(nowYear, nowMonth, getMonthDays(nowMonth)));
+            today = ''
+            date_begin  = monthStartDate;
+            date_end = monthEndDate;
+             $('#datagrid').datagrid('reload', {
+                'date_begin': monthStartDate,
+                'date_end': monthEndDate,
+                 stuname:stuname
+            });
+        }
+
+function weekdata() {
+            var weekStartDate =formatDate(new Date(nowYear, nowMonth, nowDay - nowDayOfWeek + 1));
+            var weekEndDate =formatDate(new Date(nowYear, nowMonth, nowDay + (7 - nowDayOfWeek)));
+            today = ''
+            date_begin  = weekStartDate;
+            date_end = weekEndDate;
+             $('#datagrid').datagrid('reload', {
+                'date_begin': weekStartDate,
+                'date_end': weekEndDate,
+                 stuname:stuname
+            });
+        }
+function todays() {
+        today = formatDate(now)
+             $('#datagrid').datagrid('reload', {
+                today:today
+            });
+        }
+function all_att() {
+    date_end = '',
+    date_begin = '',
+    today = '';
+    $('#datagrid').datagrid('reload',{
+        q:'all',
+        keyword:0,
+        stuname:stuname
+    });
+}
+
+function exportData() {
+        var _params = {
+            date_begin:date_begin,
+            date_end:date_end,
+            status:status,
+            stuname:stuname,  // 实现当前学生多条件导出 ,复合条件下的结果导出,由全局变量控制,
+            today:today
+        };
+            $.messager.confirm('提醒', '确定要导出吗?', function (r) {
+                if (r) {
+                    var options = $('#datagrid').datagrid('options');
+                    $.download(options.url, 'export=true&' + object2str(_params), 'post');
+                }
+            });
+        }
+
+function formatStatus(value,row,index) {
+	if(row.status == 1){
+		return '<font color="red">缺勤</font>'
+	}
+	return "正常";
+}
+
+
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}学生考勤 > 考勤明细 {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+			url="/attendance/data/"
+			toolbar="#toolbar"
+            fit="true"
+			pagination="true"
+			singleSelect="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+        <tr>
+            <th field="student" width="150" align="center">姓名</th>
+            <th field="class" width="200" align="center">班级</th>
+            <th field="grade" width="200" align="center">年级</th>
+            <th field="status" width="100" align="center" formatter="formatStatus">考勤状态</th>
+            <th field="start_time" width="150" align="center">时间</th>
+            <th field="submitter" width="150" align="center">填报人</th>
+            <th field="notes" width="300">备注</th>
+        </tr>
+    </thead>
+</table>
+
+<div id="toolbar">
+	<div style="float:right; margin:2px;">
+
+        <a href="#" class="easyui-splitbutton" menu="#is_active_mm" plain="false" iconCls="icon-options" style="height: 22px">按考勤查询</a>
+        <div id="is_active_mm" style="width:90px;">
+            <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>
+            <div iconCls="icon-item" onclick="search(1, 'type')">缺勤</div>
+            <div iconCls="icon-item" onclick="search(0, 'type')">正常</div>
+        </div>
+{#        <a href="#" class="easyui-splitbutton" menu="#shop_mm" plain="false" iconCls="icon-options" style="height: 22px">按科目查询</a>#}
+{#            <div id="shop_mm" style="width:90px;">#}
+{#                <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>#}
+{#                {% for k in sub %}#}
+{#                    <div iconCls="icon-item" onclick="search({{ k.id }}, 'sub')">{{ k.name }}</div>#}
+{#                {% endfor %}#}
+{#            </div>#}
+        <input id="date_begin" class="easyui-datebox" style="width:130px" data-options="buttonText:'日期',buttonAlign:'left'"> 至 <input id="date_end" class="easyui-datebox" style="width:95px">
+        <div class="textbox-icon searchbox-button" onclick="search_date()"></div>
+		<input id="ss" name="name" class="easyui-searchbox" searcher="search"  prompt="请输入学生姓名" style="width:150px" />
+	</div>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-export" plain="true" onclick="exportData()">导出</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="edit()">修改</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="all_att()">全部考勤</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="monthdata()">本月考勤</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="weekdata()">本周考勤</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="todays()">今日考勤</a>
+
+{#	<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">修改</a>#}
+
+
+    <div style="clear:both;"></div>
+</div>
+
+<div id="dlg-edit" class="easyui-dialog" style="width:600px;height: 800px"
+		closed="true" buttons="#dlg-saveuser-buttons" align="center">
+	<form id="account_form" method="post" novalidate>
+            {% csrf_token %}
+        <table id="table-edit" class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+            {{ form.as_table }}
+        </table>
+        <table id="table-add" class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+            {% for forms in form_list %}
+                    {{ forms.as_table }}
+            {% endfor %}
+        </table>
+	</form>
+</div>
+
+
+{#<div id="dlg-add" class="easyui-dialog" style="width:600px; height: 800px"#}
+{#		closed="true" buttons="#dlg-saveuser-buttons">#}
+{#	<form id="account_form_add" method="post" novalidate>#}
+{#            {% csrf_token %}#}
+{#                <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>#}
+{#            {% for forms in form_list %}#}
+{#                    {{ forms.as_table }}#}
+{#            {% endfor %}#}
+{#                </table>#}
+{#	</form>#}
+{#</div>#}
+
+
+<div id="dlg-saveuser-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+</div>
+
+
+<div id="dlg-import" class="easyui-dialog" closed="true" buttons="#import-buttons" style="width:450px;">
+	<form id="fm-import" method="post" novalidate enctype="multipart/form-data">
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+			<tr>
+				<th>数据文件：</th>
+				<td><input class="easyui-filebox" name="excel_file" data-options="prompt:'选择数据文件...', buttonText:'选择'" style="width:350px;"></td>
+			</tr>
+        </table>
+		<input type="hidden" id="department_id" name="department_id">
+	</form>
+</div>
+
+<div id="import-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="doImport()">导入</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-import').dialog('close')">取消</a>
+</div>
+{% endblock %}

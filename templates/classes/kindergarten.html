@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+var url;
+
+function add(){
+	$('#id_password').parent().parent().show();
+	$('#id_password2').parent().parent().show();
+	$('#id_password').textbox({required:true});
+	$('#id_password2').textbox({required:true});
+	$('#id_password').validatebox('enableValidation');
+	$('#id_password2').validatebox('enableValidation');
+	$('#dlg-edit').dialog('open').dialog('setTitle','添加');
+	$('#account_form').form('reset');
+	$('#id_username').attr('readonly', false);
+	url = '{% url "kindergarten_save" %}';
+}
+
+function edit(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$('#id_password').parent().parent().hide();
+		$('#id_password2').parent().parent().hide();
+		$('#id_password').textbox({required:false});
+		$('#id_password2').textbox({required:false});
+		$('#id_password').validatebox('disableValidation');
+		$('#id_password2').validatebox('disableValidation');
+		$('#dlg-edit').dialog('open').dialog('setTitle','修改');
+		$('#account_form').form('reset');
+		$('#account_form').form('load',row);
+		url = 'class/kindergarten/save/?id='+row.id;
+	}
+}
+
+function batchImport(){
+	$('#dlg-import').dialog('open').dialog('setTitle','导入用户');
+	$('#fm-import').form('reset');
+}
+
+function doImport(){
+	$('#fm-import').form('submit',{
+		url: '/account/import/',
+		onSubmit: function(){
+			return $('#fm-import').form('validate');
+		},
+		success: function(result){
+			var result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-import').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+		}
+	});
+}
+
+function save(btn){
+	$('#account_form').form('submit',{
+		url: url,
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+
+function removeAccount(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除该用户吗?',function(r){
+			if (r){
+				$.get('/account/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+
+			}
+		});
+	}
+}
+
+
+
+function formatStatus(value,row,index) {
+	if(value == false){
+		return '<font color="red">禁用</font>'
+	}
+	return "正常";
+}
+
+function active(status){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row == null){
+		$.messager.alert('提醒', "请在列表中选择一个账号。", 'info');
+		return;
+	}
+
+	$.get('/account/change_active/?id='+row.id+'&status='+status, function(result){
+		result = eval('('+result+')');
+		if (result.success){
+			$('#datagrid').datagrid('reload');
+		} else {
+			$.messager.alert('错误', result.errors, 'error');
+		}
+	});
+}
+
+//搜索
+function search(value,name){  
+	$('#datagrid').datagrid('reload',{
+        q:name,
+        keyword:value
+    });
+}
+
+
+
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}幼儿园信息管理 > 幼儿园管理 {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+			url="{% url 'kindergarten_data' %}"
+			toolbar="#toolbar"
+            fit="true"
+			pagination="true"
+			singleSelect="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+        <tr>
+            <th field="name" width="150" align="center">幼儿园名称</th>
+            <th field="kindergartenor" width="300" align="center">园长</th>
+            <th field="address" width="300" align="center">地址</th>
+            <th field="notes" width="300">介绍</th>
+			<th field="account_book" width="150" align="center">账套ID</th>
+        </tr>
+    </thead>
+</table>
+
+<div id="toolbar">
+	<div style="float:right; margin:2px;">
+{#        <a href="#" class="easyui-splitbutton" menu="#superuser_mm" plain="false" iconCls="icon-options" style="height: 22px">按超级用户查询</a>#}
+{#        <div id="superuser_mm" style="width:90px;">#}
+{#            <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>#}
+{#            <div iconCls="icon-item" onclick="search(1, 'is_superuser')">是</div>#}
+{#            <div iconCls="icon-item" onclick="search(0, 'is_superuser')">否</div>#}
+{#        </div>#}
+{#        <a href="#" class="easyui-splitbutton" menu="#is_active_mm" plain="false" iconCls="icon-options" style="height: 22px">按状态查询</a>#}
+{#        <div id="is_active_mm" style="width:90px;">#}
+{#            <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>#}
+{#            <div iconCls="icon-item" onclick="search(1, 'is_active')">营业</div>#}
+{#            <div iconCls="icon-item" onclick="search(0, 'is_active')">关闭</div>#}
+{#        </div>#}
+		<input id="ss" name="kindergarten_name" class="easyui-searchbox" searcher="search"  prompt="请输入幼儿园名称" style="width:150px" />
+		<input id="ss" name="ID" class="easyui-searchbox" searcher="search"  prompt="请输入账套ID" style="width:150px" />
+	</div>
+
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">修改</a>
+
+
+{#	<a href="#" class="easyui-splitbutton" menu="#statusmm" iconCls="icon-userstatus">状态</a>#}
+{#	<div id="statusmm" style="width:90px;">#}
+{#        <div iconCls="icon-ok" onclick="active(true)">营业</div>#}
+{#        <div iconCls="icon-no" onclick="active(false)">关闭</div>#}
+{#	</div>#}
+    <div style="clear:both;"></div>
+</div>
+
+<div id="dlg-edit" class="easyui-dialog" style="width:600px;"
+		closed="true" buttons="#dlg-saveuser-buttons">
+	<form id="account_form" method="post" novalidate>
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+            {% csrf_token %}
+            {% for field in form.visible_fields %}
+                <tr>
+                    <th width="150">{{field.label_tag}}</th>
+                    <td>
+                        {{field}}<div>{{field.help_text}}</div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% for field in form.hidden_fields %}
+        {{ field }}
+        {% endfor %}
+	</form>
+</div>
+
+
+
+<div id="dlg-saveuser-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+</div>
+
+
+<div id="dlg-import" class="easyui-dialog" closed="true" buttons="#import-buttons" style="width:450px;">
+	<form id="fm-import" method="post" novalidate enctype="multipart/form-data">
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+			<tr>
+				<th>数据文件：</th>
+				<td><input class="easyui-filebox" name="excel_file" data-options="prompt:'选择数据文件...', buttonText:'选择'" style="width:350px;"></td>
+			</tr>
+        </table>
+		<input type="hidden" id="department_id" name="department_id">
+	</form>
+</div>
+
+<div id="import-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="doImport()">导入</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-import').dialog('close')">取消</a>
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block css %}
+    <style>
+        .view_input {
+            background-color: transparent;
+            border: 0;
+        }
+    </style>
+{% endblock %}
+
+{% block js %}
+<script>
+    var _params = {
+    q:'',
+    keyword:''
+};
+function search(value,name){
+	_params = {
+        q:name,
+        keyword:value
+    };
+    $('#datagrid').datagrid('load',_params);
+}
+
+
+
+function search(value, name) {
+    date_begin = $('#date_begin').datebox('getValue');
+    date_end = $('#date_end').datebox('getValue');
+    _params = {
+        'date_begin': date_begin,
+        'date_end': date_end,
+        q: name,
+        keyword: value
+    };
+    $('#datagrid').datagrid('load', _params);
+}
+
+
+
+function add(){
+	$('#dlg-edit').dialog('open').dialog('setTitle','添加');
+	$('#fm').form('reset');
+
+	url = '/finance/drawing/account/save/';
+}
+
+function edit(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$('#fm').form('reset');
+        delete row.image;
+		$('#fm').form('load',row);
+
+		url = '/finance/drawing/account/save/?id='+row.id;
+
+		$('#dlg-edit').dialog('open').dialog('setTitle','编辑');
+	}
+}
+
+function save(btn){
+	$('#fm').form('submit',{
+		url: url,
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+
+function del(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除吗?',function(r){
+			if (r){
+				$.get('/finance/drawing/account/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+			}
+		});
+	}
+}
+
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}财务管理 > 提现账户{% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+       url="/finance/drawing/account/data/"
+       toolbar="#toolbar"
+       pagination="true"
+       fit="true"
+       fitColumns="true"
+       singleSelect="true"
+       pageSize="{{ settings.PAGE_SIZE }}"
+       showFooter="true"
+       idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+    <tr>
+        <th field="create_user_text" width="100">用户</th>
+        <th field="type_text" width="70">类别</th>
+        <th field="account_number" width="120">帐号</th>
+        <th field="account_name" width="100">户名</th>
+        <th field="account_bank" width="80">银行</th>
+        <th field="create_time" width="120">添加时间</th>
+    </tr>
+    </thead>
+</table>
+
+<div id="toolbar" >
+    {% if user.is_teacher or user.is_superuser %}
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">修改</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="del()">删除</a>
+    {% endif %}
+
+    <span class="separator"></span>
+	<div style="float:right; margin:2px;">
+        <a href="#" class="easyui-splitbutton" menu="#pay_status_mm" iconCls="icon-options" >按类别查看</a>
+        <div id="pay_status_mm">
+            <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>
+            {% for item in DrawingAccount.TYPE_CHOICES %}
+            <div iconCls="icon-item" onclick="search({{ item.0 }}, 'type_text')">{{ item.1 }}</div>
+            {% endfor %}
+        </div>
+		<input id="searchbox" class="easyui-searchbox" searcher="search"  prompt="请输入账号" menu="#searchmm" style="width:300px"/>
+		<div id="searchmm" style="width:120px">
+            <div name='username' iconCls="icon-status_online" >帐号</div>
+		</div>
+	</div>
+    <div style="clear:both;"></div>
+</div>
+
+<div id="dlg-edit" class="easyui-dialog" style="width:600px;"
+		closed="true" buttons="#dlg-buttons">
+	<form id="fm" method="post" novalidate >
+		{% csrf_token %}
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+		{% for field in form.visible_fields %}
+            <tr>
+                <th>{{field.label_tag}}</th>
+                <td>{{field}}<div>{{field.help_text}}</div>
+                </td>
+            </tr>
+         {% endfor %}
+        </table>
+	</form>
+</div>
+
+<div id="dlg-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+</div>
+{% endblock %}

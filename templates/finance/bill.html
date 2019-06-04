@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+    var _params = {
+    q:'',
+    keyword:''
+};
+function search(value,name){
+	_params = {
+        q:name,
+        keyword:value
+    };
+    $('#datagrid').datagrid('load',_params);
+}
+
+
+
+function search(value, name) {
+    date_begin = $('#date_begin').datebox('getValue');
+    date_end = $('#date_end').datebox('getValue');
+    _params = {
+        date_begin: date_begin,
+        date_end: date_end,
+        type:$('#query_type').datebox('getValue'),
+        pay_mode:$('#query_pay_mode').datebox('getValue'),
+        q: name,
+        keyword: value
+    };
+    $('#datagrid').datagrid('load', _params);
+}
+
+
+function exportData(){
+    var options = $('#datagrid').datagrid('options');
+    $.download(options.url, 'export=true&'+object2str(_params), 'post');
+}
+
+function onDblClickRow(index,row){
+	var tableView = $('#table-view');
+	tableView.empty();
+
+	var cols =  $('#datagrid').datagrid('getColumnFields');
+	var data = $('#datagrid').datagrid('getRows')[index];
+
+    for(var k in cols){
+        var col = $('#datagrid').datagrid('getColumnOption', cols[k]);
+        if(col == null) continue;
+
+        var val = data[cols[k]] || '';
+        if(col.formatter)
+            val = col.formatter(val,row,index);
+
+        var tr = "<tr><th>"+col.title+":</th><td>"+val+"</td></tr>";
+        tableView.append(tr);
+    }
+
+    $('#dlg-view').dialog('open').dialog('setTitle','查看详细').dialog('center');
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}财务管理 > 账单记录{% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+       url="/finance/bill/data/"
+       toolbar="#toolbar"
+       pagination="true"
+       fit="true"
+       singleSelect="true"
+       pageSize="{{ settings.PAGE_SIZE }}"
+       showFooter="true"
+       data-options="onDblClickRow:onDblClickRow"
+       idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+    <tr>
+        <th field="user_text" width="90">用户</th>
+        <th field="order_no" width="120">订单号</th>
+        <th field="order_type_text" width="80">订单类别</th>
+        <th field="order_create_time" width="120">下单时间</th>
+        <th field="totalfee" width="80" align="right">金额</th>
+        <th field="pay_mode_text" width="80">支付方式</th>
+        <th field="pay_time" width="120">支付时间</th>
+        <th field="tradeno" width="230">交易号</th>
+        <th field="buyer" width="220">支付账号</th>
+    </tr>
+    </thead>
+</table>
+
+<div id="dlg-finish-buttons">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="finish_save()">保存</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-finish').dialog('close')">取消</a>
+</div>
+
+<div id="toolbar">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-export" plain="true" onclick="exportData()">导出</a>
+    <div style="float:right; margin:2px;">
+         <select id="query_type" class="easyui-combobox" style="width:150px" data-options="buttonText:'订单类别',buttonAlign:'left',editable:false">
+             <option value="" selected>全部</option>
+             {% for item in Order.TYPE_CHOICES %}
+             <option value="{{ item.0 }}">{{ item.1 }}</option>
+             {% endfor %}
+        </select>
+         <select id="query_pay_mode" class="easyui-combobox" style="width:120px" data-options="buttonText:'支付方式',buttonAlign:'left',editable:false">
+             <option value="" selected>全部</option>
+             {% for item in Bill.PAY_MODE_CHOICES %}
+             <option value="{{ item.0 }}">{{ item.1 }}</option>
+             {% endfor %}
+        </select>
+        <input id="date_begin" class="easyui-datebox" style="width:140px"
+               data-options="buttonText:'时间',buttonAlign:'left'"> 至 <input id="date_end" class="easyui-datebox"
+                                                                           style="width:95px">
+
+        <input id="searchbox" class="easyui-searchbox" searcher="search" prompt="请输入关键字" menu="#searchmm"
+               style="width:250px"/>
+        <div id="searchmm" style="width:120px">
+            <div name='order_no' iconCls="icon-orderno">订单号</div>
+            <div name='username' iconCls="icon-person">用户</div>
+        </div>
+    </div>
+    <div style="clear:both;"></div>
+</div>
+
+<div id="dlg-view" class="easyui-dialog" style="width:530px;height:500px" closed="true">
+    <table id="table-view" class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+
+    </table>
+</div>
+{% endblock %}

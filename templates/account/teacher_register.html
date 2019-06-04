@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+	    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>教师注册</title>
+	    <link rel="stylesheet" type="text/css" href="/static/css/style.css"/>
+        <link rel="stylesheet" type="text/css" href="/static/css/gray/easyui.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/icon.css">
+        <style type="text/css">
+            .content {
+                width: 100%;
+                position: absolute;
+                top: 20%;
+                height: 240px;
+                margin-top: -120px;
+            }
+			body{ background:url(/static/images/registerbg.jpg) center top no-repeat; }
+			* {font-size: 12pt; font-weight:normal}
+            .content {
+                width: 100%;
+                position: absolute;
+                top: 30%;
+                margin-top: -120px;
+            }
+			.reg-tab-sh{background:#fff;}
+			.reg-tab-sh tr th{ line-height:35px; font-size:28px !important; background:#fff; width:100px;  }
+			.table-edit th, .table-edit td{ border:1px solid #ddd }
+			span{  min-height:30px !important; line-height:30px !important}
+			.l-btn-icon{margin-top: -14px;}
+			.l-btn-text{ font-size:20px}
+            #id_category li{float:left; width:120px}
+        </style>
+	    <script type="text/javascript" src="/static/js/jquery-1.9.0.min.js"></script>
+        <script type="text/javascript" src="/static/js/jeasyui/jquery.easyui.min.js"></script>
+        <script type="text/javascript" src="/static/js/jquery-migrate-1.2.1.min.js"></script>
+        <script type="text/javascript" src="/static/js/jeasyui/locale/easyui-lang-zh_CN.js"></script>
+	    <script type="text/javascript" src="/static/js/utils.js"></script>
+        <script language="javascript" type="text/javascript">
+            $(function(){
+                $('#id_username').textbox({prompt:"请输入手机号注册"});
+                $('#id_username').validatebox({validType:"mobile"});
+                //$('#id_category').change(onCategoryChanged);
+            });
+
+            var _countDown = 59;
+            var _t = null;
+            var _smsSend = false;
+            function sendVCode(btn){
+                if( $('#id_username').validatebox('isValid') == false){
+                    $.messager.alert('错误', '帐号无效，不是一个有效的手机号！', 'error');
+                    return;
+                }
+                $(btn).linkbutton("disable");
+
+                var mobile = $('#id_username').textbox("getValue");
+                var pvcode = $('#id_pvcode').textbox("getValue");
+                var url = "/api/mobile_vcode/?mobile="+mobile+'&pvcode='+pvcode;
+                $.get(encodeURI(url), function (result) {
+                    result = eval("("+result+")");
+                    if(result.success != 1){
+                        $.messager.alert('错误', result.errors, 'error');
+                    }else{
+                        _smsSend = true;
+                        _t = setInterval(function(){
+                            $(btn).linkbutton({text: _countDown+"秒后可重发"});
+                            _countDown -= 1;
+                            if(_countDown == -1){
+                                $(btn).linkbutton("enable");
+                                $(btn).linkbutton({text: "发送验证码"});
+                                clearInterval(_t);
+                                _countDown = 59;
+                            }
+                        }, 1000);
+                    }
+                });
+            }
+
+            function save(btn){
+                if(!_smsSend){
+                    $.messager.alert('错误', '请发送手机验证码！', 'error');
+                    return;
+                }
+                if(_gradeAndSubjects.length == 0){
+                    $.messager.alert('错误', '请添加年级和课程！', 'error');
+                    return;
+                }
+
+                $('#id_grade_and_subjects').val(JSON.stringify(_gradeAndSubjects));
+
+                $('#fm').form('submit',{
+                    url: '{% url  'teacher_register_save' %}',
+                    onSubmit: function(){
+                        var valid = $.submitValidate('#fm');
+                        if(valid) $(btn).linkbutton("disable");
+                        return valid;
+                    },
+                    success: function(result){
+                        result = eval('('+result+')');
+                        if (result.success){
+                            $.messager.alert('恭喜', '注册成功!', 'info', function(){
+                                window.location.href = "/login/";
+                            });
+
+                        } else {
+                            $.messager.alert('错误', result.errors, 'error');
+                        }
+
+                        $(btn).linkbutton("enable");
+                    }
+                });
+            }
+
+            var _gradeAndSubjects = [];
+            function addSubject() {
+                $('#dlg-subject').dialog('open');
+            }
+
+            function saveSubject(btn) {
+                var grade = $('#id_grade').combobox('getValue');
+                var subject = $('#id_subject').combobox('getValue');
+                var gradeText = $('#id_grade').combobox('getText');
+                var subjectText = $('#id_subject').combobox('getText');
+                if(grade == ''){
+                    $.messager.alert('错误', '请选择年级！', 'error');
+                    return;
+                }
+                if(subject == ''){
+                    $.messager.alert('错误', '请选择课程！', 'error');
+                    return;
+                }
+
+                for(var n in _gradeAndSubjects){
+                    if(_gradeAndSubjects[n][0] == grade && _gradeAndSubjects[n][1] == subject){
+                        $.messager.alert('错误', '该年级和课程已添加！', 'error');
+                        return;
+                    }
+                }
+
+                $('#td-subjects').append('<p>'+gradeText+subjectText+' [<a href="#" onclick="removeSubject(\''+grade+'\', \''+subject+'\', this)">删除</a>]</p>');
+                $('#dlg-subject').dialog('close');
+                _gradeAndSubjects.push([grade, subject]);
+            }
+
+            function removeSubject(grade, subject, ele) {
+                $.messager.confirm('提醒','确定要删除吗?',function(r){
+                    if(r){
+                        for(var n in _gradeAndSubjects){
+                            if(_gradeAndSubjects[n][0] == grade && _gradeAndSubjects[n][1] == subject){
+                                _gradeAndSubjects.splice(n, 1);
+                                $(ele).parent().remove();
+                            }
+                        }
+                    }
+                });
+            }
+
+            function onGradeChange(newVal) {
+                $('#id_subject').combobox('clear');
+                $('#id_subject').combobox('reload', '/basic/subject/combo/data/?grade='+newVal)
+            }
+        </script>
+    </head>
+
+    <body>
+        <div class="content" style="top:20%">
+            <h1 align="center" style="font-size:26px; padding:0 0 20px">教师注册</h1>
+            <form id="fm" method="post" action="." enctype="multipart/form-data">
+                <div style="padding:40px 20px;  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2); background:#fff; width:810px; margin:0 auto 50px; border-radius:10px ">
+                    {% csrf_token %}
+                    <table class="table-edit reg-tab-sh" width="800px" cellspacing=0 cellpadding=0 border=0>
+                        <tr>
+                            <th><label>验证码：</label></th>
+                            <td>
+                                <img src="/api/verifycode/">
+                                <input class="easyui-textbox" id="id_pvcode" size="10" required/>
+                            </td>
+                        </tr>
+                    {% for field in form.visible_fields %}
+                        <tr>
+                            <th>{{field.label_tag}}</th>
+                            <td>{{field}}<span id="err_{{field.name}}" style="color:red; margin-left:5px"></span><div>{{field.help_text}}</div> {{ field.errors }}</td>
+                        </tr>
+                     {% endfor %}
+                        <tr>
+                            <th><label>手机验证码:</label></th>
+                            <td>
+                                <input class="easyui-textbox" id="id_vcode" maxlength="6" name="vcode" required="true" size="10" type="text" />
+                                <a href="#" class="easyui-linkbutton" onclick="sendVCode(this)" iconCls="icon-mobile" style="font-size:10px;">发送验证码</a>
+                            </td>
+                        </tr>
+                    {% for field in form_teacher.visible_fields %}
+                        <tr>
+                            <th>{{field.label_tag}}</th>
+                            <td>{{field}}</td>
+                        </tr>
+                    {% endfor %}
+                        <tr>
+                            <th>
+                                <label>年级和课程：</label>
+                            </th>
+                            <td>
+                                <p>[<a href="#" onclick="addSubject()">添加</a>]</p>
+                                <div  id="td-subjects"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <td><a href="#" class="easyui-linkbutton" onclick="save(this)" iconCls="icon-ok" style="padding:5px 40px; font-size:9pt; background:#3994c7; color:#fff">提交</a></td>
+                        </tr>
+                    </table>
+                    {% for field in form.hidden_fields %}
+                    {{ field }}
+                    {% endfor %}
+                    {% for field in form_teacher.hidden_fields %}
+                    {{ field }}
+                    {% endfor %}
+                </div>
+                <input type="hidden" id="id_grade_and_subjects" name="grade_and_subject">
+            </form>
+        </div>
+
+        <div id="dlg-subject" class="easyui-dialog" closed="true" buttons="#dlg-subject-buttons" title="添加年级和课程">
+            <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0 style="border-bottom: 0">
+                <tr>
+                    <th width="80">年级:</th>
+                    <td><input class="easyui-combobox" id="id_grade"size="40" type="text" data-options="url:'/basic/grade/combo/data/', valueField:'id', textField:'name',editable:false,onChange:onGradeChange" /></td>
+                </tr>
+                <tr>
+                    <th width="80">课程:</th>
+                    <td><input class="easyui-combobox" id="id_subject"size="40" type="text" data-options="editable:false,valueField:'id', textField:'name'"/></td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="dlg-subject-buttons">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="saveSubject(this)">确定</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-subject').dialog('close')">取消</a>
+        </div>
+
+	    <div id="indicator" style="display:none;"><div class="info"><img src="/static/images/ajax-loader.gif" align="absmiddle">&nbsp;&nbsp;正在处理,请稍候...</div><div class="mask"></div></div>
+    </body>
+</html>

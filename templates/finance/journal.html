@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+    var _params = {
+    q:'',
+    keyword:''
+};
+function search(value,name){
+	_params = {
+        q:name,
+        keyword:value
+    };
+    $('#datagrid').datagrid('load',_params);
+}
+
+
+
+function search(value, name) {
+    date_begin = $('#date_begin').datebox('getValue');
+    date_end = $('#date_end').datebox('getValue');
+    _params = {
+        date_begin: date_begin,
+        date_end: date_end,
+        type:$('#query_type').combobox('getValue'),
+        q: name,
+        keyword: value
+    };
+    $('#datagrid').datagrid('load', _params);
+}
+
+
+
+function exportData(){
+    var options = $('#datagrid').datagrid('options');
+    $.download(options.url, 'export=true&'+object2str(_params), 'post');
+}
+
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}财务管理 > 财务流水{% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+       url="/finance/journal/data/"
+       toolbar="#toolbar"
+       pagination="true"
+       fit="true"
+       singleSelect="true"
+       pageSize="{{ settings.PAGE_SIZE }}"
+       showFooter="true"
+       idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+    <tr>
+        <th field="create_user_text" width="90">用户</th>
+        <th field="type_text" width="60">类别</th>
+        <th field="total_fee" width="70">金额</th>
+        <th field="balance" width="70">余额</th>
+        <th field="description" width="400">描述</th>
+        <th field="notes" width="120">备注</th>
+        <th field="create_time" width="120">时间</th>
+    </tr>
+    </thead>
+</table>
+
+<div id="toolbar" >
+    <a href="#" class="easyui-linkbutton" iconCls="icon-export" plain="true" onclick="exportData()">导出</a>
+
+	<div style="float:right; margin:2px;">
+         <select id="query_type" class="easyui-combobox" style="width:120px" data-options="buttonText:'类别',buttonAlign:'left',editable:false">
+             <option value="" selected>全部</option>
+             {% for item in Journals.TYPE_CHOICES %}
+             <option value="{{ item.0 }}">{{ item.1 }}</option>
+             {% endfor %}
+        </select>
+        <input id="date_begin" class="easyui-datebox" style="width:130px" data-options="buttonText:'时间',buttonAlign:'left'"> <input id="date_end" class="easyui-datebox" style="width:110px" data-options="buttonText:'至',buttonAlign:'left'">
+		<input id="searchbox" class="easyui-searchbox" searcher="search"  prompt="请输入账号" menu="#searchmm" style="width:300px"/>
+		<div id="searchmm" style="width:100px">
+            <div name='username' iconCls="icon-status_online" >帐号</div>
+		</div>
+	</div>
+    <div style="clear:both;"></div>
+</div>
+
+<div id="dlg-finish-buttons">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="finish_save()">保存</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-finish').dialog('close')">取消</a>
+</div>
+
+
+{% endblock %}

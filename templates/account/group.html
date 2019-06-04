@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block js %}
+    <script>
+        var url;
+
+        function add() {
+            $('#dlg-edit').dialog('open').dialog('setTitle', '添加级别');
+            $('#form').form('reset');
+            url = '/account/group/save/';
+        }
+
+        function edit() {
+            var row = $('#datagrid').datagrid('getSelected');
+            if (row) {
+                $('#dlg-edit').dialog('open').dialog('setTitle', '编辑级别');
+                $('#form').form('reset');
+                $('#form').form('load', row);
+
+                $('.error_info').html('');
+                url = '/account/group/save/?id=' + row.id;
+            }
+        }
+
+        function save() {
+            $('#form').form('submit', {
+                url: url,
+                onSubmit: function () {
+                    return $(this).form('validate');
+                },
+                success: function (result) {
+                    result = eval('(' + result + ')');
+                    if (result.success) {
+                        $('#dlg-edit').dialog('close');
+                        $('#datagrid').datagrid('reload');
+                    } else {
+                        errors = eval('(' + result.errors + ')');
+                        for (var key in errors) {
+                            var ele = $('#id_' + key);
+                            var msg = $('#err_' + key);
+                            msg.html(errors[key]);
+                        }
+                    }
+                }
+            });
+        }
+
+        function removeGroup() {
+            var row = $('#datagrid').datagrid('getSelected');
+            if (row) {
+                $.messager.confirm('提醒', '确定要删除该级别吗?', function (r) {
+                    if (r) {
+                        $.get('/account/group/delete/?id=' + row.id, function (result) {
+                            result = eval('(' + result + ')');
+                            if (result.success) {
+                                $('#datagrid').datagrid('reload');
+                            } else {
+                                $.messager.alert('错误', result.message, 'error');
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function onClicked(obj) {
+            $(obj).parent().next().find(':checkbox').attr('checked', obj.checked);
+        }
+    </script>
+{% endblock %}
+
+{% block breadcrumbs %}部门管理 > 级别管理 {% endblock %}
+{% block content %}
+    <table id="datagrid" class="easyui-datagrid"
+           url="/account/group/data/"
+           fit="true"
+           toolbar="#toolbar"
+           pagination="true"
+           singleSelect="true"
+           fitColumns="true"
+           pageSize="{{ settings.PAGE_SIZE }}"
+           idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+        <thead>
+        <tr>
+            <th field="name" width="80">名称</th>
+            <th field="permission_text" width="500">权限</th>
+        </tr>
+        </thead>
+    </table>
+
+    <div id="toolbar">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">修改</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="removeGroup()">删除</a>
+    </div>
+
+    <div id="dlg-edit" class="easyui-dialog" closed="true" buttons="#dlg-buttons" style="width:700px;height:500px">
+        <form id="form" method="post" novalidate>
+            <table class="table-edit" cellspacing=0 cellpadding=0 border=0 width="100%">
+                {% csrf_token %}
+                <tr>
+                    <th width="50px">{{ form.name.label_tag }}</th>
+                    <td>{{ form.name }}
+                        <div id="err_{{ form.name.name }}" class="error_info"></div>
+                        <div>{{ form.name.help_text }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th valign="top">{{ form.permissions.label_tag }}</th>
+                    <td>
+                        {% for group, items in permissions.items %}
+                            <div style="margin-bottom:5px">
+                                <div style="font-weight:bold; background:#efefef; padding:3px">
+                                    <input type="checkbox" id="app_{{ group }}" onclick="onClicked(this)"
+                                           style="vertical-align:middle;"/><label
+                                        for="app_{{ group }}">{{ group }}</label>
+                                </div>
+                                <div>
+                                    {% for item in items %}
+                                        <div style="padding:5px;width:170px; margin-right:5px; float: left">
+                                            <input class="perm-item" style="vertical-align:middle;" type="checkbox"
+                                                   id="permission_{{ item.id }}" name="permissions"
+                                                   value="{{ item.id }}"/><label
+                                                for="permission_{{ item.id }}">{{ item.name }}</label>
+                                        </div>
+                                    {% endfor %}
+                                    <div style="clear:both;"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </td>
+                </tr>
+            </table>
+            <!-- input type="hidden" name="permissions" id="id_permissions"-->
+        </form>
+    </div>
+
+    <div id="dlg-buttons">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+    </div>
+
+{% endblock %}

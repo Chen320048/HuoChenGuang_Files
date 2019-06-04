@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script language="javascript">
+function hide(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要禁止显示吗?',function(r){
+			if (r){
+				$.get('/account/teacher/comment/hide/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+			}
+		});
+	}
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}评论管理 > 教师评论 {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+			url="/account/teacher/comment/data/"
+			toolbar="#toolbar" fit="true"
+			fitColumns="true"
+			pagination="true"
+			singleSelect="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+            rowNumbers="true"
+			idField='id' nowrap="true" striped="true" border="true">
+	<thead>
+		<tr>
+			<th field="create_user_text" width="100">用户账号</th>
+			<th field="teacher_text" width="90">教师</th>
+			<th field="stars" width="80">评价</th>
+			<th field="content" width="200">评论内容</th>
+			<th field="create_time" width="120">时间</th>
+			<th field="hidden_text" width="80">是否显示</th>
+		</tr>
+	</thead>
+</table>
+
+<div id="toolbar">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="hide()">禁止显示</a>
+</div>
+{% endblock %}

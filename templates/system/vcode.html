@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script type="text/javascript">
+var _params = null;
+
+$(document).ready(function(){
+     query();
+});
+
+//搜索
+function query(){
+    var loginTime = $('#start_time').datebox('getValue');
+	var logoutTime = $('#end_time').datebox('getValue');
+    var username = $('#username').textbox('getValue');
+
+    _params = {
+        start_time: loginTime,
+        end_time: logoutTime,
+        username: username
+    };
+
+	$('#datagrid').datagrid('reload',_params);
+}
+
+function exportData(){
+	var options = $('#datagrid').datagrid('options');
+	$.download(options.url, 'export=true&'+object2str(_params), 'post');
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}系统管理 > 验证码管理{% endblock %}
+{% block content %}
+
+<table id="datagrid" class="easyui-datagrid" style="width:700px;height:600px"
+			url="{%  url 'vcode_data' %}"
+			toolbar="#toolbar"
+			fitColumns="true"
+			iconCls='icon-edit'			
+			pagination="true"
+            fit="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			method="post"
+			idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+        <tr>
+			<th field="mobile" width="80">帐号</th>
+            <th field="vcode" width="180">验证码</th>
+{#           <th field="type_text" width="80">类型</th>#}
+			<th field="status_text" width="80">状态</th>
+             <th field="add_time" width="80">时间</th>
+        </tr>
+    </thead>
+</table>
+
+<div id="toolbar" style="padding:3px">
+	<div style="float:right; margin:2px;">
+		开始时间：<input type="text" id="start_time" class="easyui-datebox" style="width: 150px" />
+		&nbsp;&nbsp;结束时间：<input type="text" id="end_time"  class="easyui-datebox"  style="width: 150px"/>
+        &nbsp;&nbsp;帐号：<input type="text" id="username"  class="easyui-textbox"  style="width: 100px"/>
+		<a href="#" class="easyui-linkbutton" iconCls="icon-search" style="height:22px" onclick="query()">查询</a>
+	</div>
+
+    <!--<a href="#" class="easyui-linkbutton" iconCls="icon-export" plain="true"  onclick="exportData()">导出</a>-->
+	<div style="clear:both;"></div>
+</div>
+{% endblock %}

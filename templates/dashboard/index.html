@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>幼儿园通用财务管理系统</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link href="/static/css/style.css" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" type="text/css" href="/static/css/gray/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/icon.css">
+    <link rel="shortcut icon" href="/static/favicon.ico"/>
+    <script type="text/javascript" src="/static/js/jquery-1.9.0.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            //导航切换
+            $(".menuson li").click(function () {
+                $(".menuson li.active").removeClass("active")
+                $(this).addClass("active");
+            });
+
+            $('.title').click(function () {
+                var $ul = $(this).next('ul');
+                $('dd').find('ul').slideUp();
+                if ($ul.is(':visible')) {
+                    $(this).next('ul').slideUp();
+                } else {
+                    $(this).next('ul').slideDown();
+                }
+            });
+
+            $(".leftmenu a").click(function () {
+                $(".leftmenu a").removeClass("current");
+                $(this).addClass("current");
+                $("#page").attr("src", $(this).attr("page"));
+            });
+
+            $(window).resize();
+        })
+
+        $(window).resize(function () {
+            $("#page").height($(window).height() - $("#header").height());
+            $("#page").width($(window).width() - 188);
+        });
+
+        function changeOpen(ele) {
+            $.get('/account/teacher/change_open/', function (result) {
+                result = eval('('+result+')');
+                if(result.success){
+                    $(ele).html(result.data);
+                }else{
+                    $.messager.alert('错误', result.errors, 'error');
+                }
+            });
+        }
+    </script>
+
+</head>
+
+<body style="background:url(/static/images/topbg.gif) repeat-x; overflow:hidden;">
+<div id="container">
+    <table border="0" cellspacing="0" cellpadding="0" width="100%">
+        <tr>
+            <td colspan="2" id="header">
+                <div class="topleft">
+                    <a href="#" onclick="page.src='/dashboard/home/'" title="返回首页"><img src="/static/images/logo.png" style="height: 71px;"/></a>
+                </div>
+
+                <div class="topright">
+                    <ul>
+
+                        <li>&nbsp;</li>
+
+                    </ul>
+                    <div class="user" id="userinfo">
+                            <span>当前账号：{{ user.name }}</span>&nbsp;&nbsp;
+                            |&nbsp;&nbsp;
+                            <a href="/logout/">退出登录</a>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td valign="top" style="border-right: solid 1px #B7D5DF">
+                <dl class="leftmenu">
+                    <div class="lefttop"><span></span>系统菜单</div>
+
+                        {% if perms.account.manage_company %}
+                            <dd>
+                                <div class="title"><span/><img src="/static/images/learning.png"/></span>用户管理</div>
+                                <ul class="menuson">
+                                <li><cite></cite><a href="#" page="/account/company/">园企</a><i></i></li>
+                                <li><cite></cite><a href="#" page="/account/investors/">投资人</a><i></i></li>
+                                <li><cite></cite><a href="#" page="/account/kindergartenor/list/">幼儿园园长</a><i></i></li>
+                                </ul>
+                            </dd>
+                        {% endif %}
+                        {% if perms.account.manage_kindergardenor or perms.account.manage_company %}
+                            <dd>
+                            <div class="title"><span/><img src="/static/images/news.png" /></span>幼儿园管理</div>
+                                <ul class="menuson">
+                                    {% if perms.account.manage_company %}
+                                        <li><cite></cite><a href="#" page="/kinder/">幼儿园</a><i></i></li>
+                                    {% endif %}
+                                    {% if perms.account.manage_kindergardenor %}
+                                        <li><cite></cite><a href="#" page="/class/grade/">年级班级</a><i></i></li>
+                                        <li><cite></cite><a href="#" page="/account/teacher/list/">教师</a><i></i></li>
+                                    {% endif %}
+{#                                    {% if perms.classes.manage_classes and perms.classes.manage_student %}#}
+{#                                        <li><cite></cite><a href="#" page="/class/class/">班级学生管理</a><i></i></li>#}
+{#                                    {% endif %}#}
+                                </ul>
+                            </dd>
+                        {% endif %}
+                        {% if perms.account.manage_kindergardenor or perms.account.manage_teacher %}
+                            <dd>
+                            <div class="title"><span/><img src="/static/images/news.png" /></span>学生管理</div>
+                            <ul class="menuson">
+                                <li><cite></cite><a href="#" page="/class/student/">学生信息</a><i></i></li>
+                                {% if perms.account.manage_teacher %}
+                                    <li><cite></cite><a href="#" page="/attendance/list/">考勤明细</a><i></i></li>
+                                {% endif %}
+                                <li><cite></cite><a href="#" page="/attendance/student/list/">个人考勤汇总</a><i></i></li>
+                            {% if perms.account.manage_teacher %}
+                                <li><cite></cite><a href="#" page="/attendance/refund/list/">缺勤退费</a><i></i></li>
+                                {% endif %}
+                            </ul>
+                            </dd>
+                        {% endif %}
+                        {% if perms.account.manage_company  %}
+                        <dd>
+                            <div class="title"><span/><img src="/static/images/news.png" /></span>退费申请</div>
+                            <ul class="menuson">
+                                <li><cite></cite><a href="#" page="/attendance/refund/review/list/">缺勤退费审核</a><i></i></li>
+                            </ul>
+                            </dd>
+                        {% endif %}
+                        {% if perms.account.manage_investors or perms.account.manage_kindergardenor %}
+                            <dd>
+                            <div class="title"><span/><img src="/static/images/news.png" /></span>{% if perms.account.manage_kindergardenor %}活动{% else %}活动信息{% endif %}</div>
+                                <ul class="menuson">
+                                    <li><cite></cite><a href="#" page="/activity/list/">活动查看</a><i></i></li>
+                                    {% if perms.account.manage_kindergardenor %}
+                                        <li><cite></cite><a href="#" page="/activity/edit/">活动编辑</a><i></i></li>
+                                    {% endif %}
+                                </ul>
+                            </dd>
+                        {% endif %}
+                        {% if perms.account.manage_kindergardenor %}
+                            <dd>
+                            <div class="title"><span/><img src="/static/images/news.png" /></span>收支管理</div>
+                                <ul class="menuson">
+                                <li><cite></cite><a href="#" page="/kinder/expense/">支出</a><i></i></li>
+                                <li><cite></cite><a href="#" page="/kinder/icome/">收入</a><i></i></li>
+                                </ul>
+                            </dd>
+                        {% endif %}
+                        <dd>
+                            <div class="title"><span/><img src="/static/images/system.png"/></span>系统管理</div>
+                            <ul class="menuson">
+                                {% if perms.account.manage_company %}
+                                      <li><cite></cite><a href="#" page="/kinder/subject/">科目管理</a><i></i></li>
+                                {% endif %}
+                                {% if perms.system.view_log %}
+                                    <li><cite></cite><a href="#" page="/system/log/">系统日志</a><i></i></li>
+                                {% endif %}
+                                <li><cite></cite><a href="#" page="/system/change_password/">修改密码</a><i></i></li>
+                            </ul>
+                        </dd>
+                </dl>
+            </td>
+            <td>
+                <iframe id="page" scrolling="Yes" src="/dashboard/home/" frameborder="0"></iframe>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

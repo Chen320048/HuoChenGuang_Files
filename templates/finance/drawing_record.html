@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block css %}
+    <style>
+        .view_input {
+            background-color: transparent;
+            border: 0;
+        }
+    </style>
+{% endblock %}
+
+{% block js %}
+<script>
+    var _params = {
+    q:'',
+    keyword:''
+};
+
+function accept(status){
+    var row = $('#datagrid').datagrid('getSelected');
+    if (row == null){
+        $.messager.alert('提醒', "请在列表中选择一条信息。", 'info');
+        return;
+    }
+
+    if(status != 0){
+        $.messager.prompt('提醒', '请输入:', function(r)
+        {
+            r = $.trim(r);
+            if (r)
+            {
+                doAccept(row.id, status, r)
+            }
+            else
+            {
+                $.messager.alert('提示', '没有输入原因，操作取消！', 'warning');
+            }
+        });
+    }else{
+        doAccept(row.id, status, '');
+    }
+
+}
+
+function doAccept(id, status, notes) {
+      $.get('/finance/drawing/record/accept/?id='+id+'&status=' + status + '&notes='+notes, function(result){
+        result = eval('('+result+')');
+        if (result.success){
+            $.messager.alert('提示', '处理成功！', 'info');
+            $('#datagrid').datagrid('reload');
+        } else {
+            $.messager.alert('错误', result.errors, 'error');
+        }
+    });
+}
+
+function finish_save() {
+    var row = _finish_row;
+    $('#fm-finish').form('submit',{
+        url: '/finance/drawing/record/record/finish/?id=' + row.id,
+        onSubmit: function(){
+            return $('#fm-finish').form('validate');
+        },
+        success: function(result){
+            var result = eval('('+result+')');
+            if (result.success){
+                $('#datagrid').datagrid('reload');
+                $('#dlg-finish').dialog('close');
+            } else {
+                $.messager.alert('错误', result.errors, 'error');
+            }
+        }
+    });
+}
+
+function exportData(){
+    var options = $('#datagrid').datagrid('options');
+    $.download(options.url, 'export=true&'+object2str(_params), 'post');
+}
+
+//搜索
+function search(value,name){
+	$('#datagrid').datagrid('reload',{
+        q:name,
+        keyword:value
+    });
+}
+
+
+function onDblClickRow(index,row){
+	var tableView = $('#table-view');
+	tableView.empty();
+
+	var cols =  $('#datagrid').datagrid('getColumnFields');
+	var data = $('#datagrid').datagrid('getRows')[index];
+
+    for(var k in cols){
+        var col = $('#datagrid').datagrid('getColumnOption', cols[k]);
+        if(col == null) continue;
+
+        var val = data[cols[k]] || '';
+        if(col.formatter)
+            val = col.formatter(val,row,index);
+
+        var tr = "<tr><th>"+col.title+":</th><td>"+val+"</td></tr>";
+        tableView.append(tr);
+    }
+
+    $('#dlg-view').dialog('open').dialog('setTitle','查看详细').dialog('center');
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}财务管理 > 提现记录{% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+       url="/finance/drawing/record/data/"
+       toolbar="#toolbar"
+       pagination="true"
+       fit="true"
+       singleSelect="true"
+       pageSize="{{ settings.PAGE_SIZE }}"
+       data-options="onDblClickRow:onDblClickRow"
+       showFooter="true"
+       idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+    <tr>
+        <th field="no" width="110">订单号</th>
+        <th field="create_user_text" width="90">提现账号</th>
+        <th field="user_type_text" width="70">账号类型</th>
+        <th field="total_fee" width="60">提现金额</th>
+        <th field="balance_before" width="70">提现前金额</th>
+        <th field="balance_after" width="70">提现后金额</th>
+        <th field="type_text" width="70">收款类型</th>
+        <th field="account_number" width="150">收款账号</th>
+        <th field="account_name" width="90">户名</th>
+        <th field="account_bank" width="100">银行</th>
+        <th field="status_text" width="50">状态</th>
+        <th field="notes" width="120">备注</th>
+        <th field="create_time" width="120">时间</th>
+    </tr>
+    </thead>
+</table>
+
+<div id="toolbar" >
+    {% if perms.finance.check_drawing %}
+    <span class="separator"></span>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-ok" plain="true" onclick="accept(0)">受理</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-no" plain="true" onclick="accept(2)">拒绝</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-redo" plain="true" onclick="accept(1)">转帐完成</a>
+    {% endif %}
+
+	<div style="float:right; margin:2px;">
+        <a href="#" class="easyui-splitbutton" menu="#status_st" plain="false" iconCls="icon-options" style="height: 22px">按状态查询</a>
+        <div id="status_st" style="width:90px;">
+            <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>
+            <div iconCls="icon-item" onclick="search(1, 'status')">已完成</div>
+            <div iconCls="icon-item" onclick="search(0, 'status')">提现中</div>
+            <div iconCls="icon-item" onclick="search(2, 'status')">已拒绝</div>
+        </div>
+		<input id="searchbox" class="easyui-searchbox" searcher="search"  prompt="请输入订单号或账号" menu="#searchmm" style="width:300px"/>
+		<div id="searchmm" style="width:120px">
+            <div name='order_no' iconCls="icon-orderno" >订单号</div>
+            <div name='username' iconCls="icon-status_online" >帐号</div>
+		</div>
+	</div>
+    <div style="clear:both;"></div>
+</div>
+<div id="dlg-finish-buttons">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="finish_save()">保存</a>
+        <a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-finish').dialog('close')">取消</a>
+</div>
+
+<div id="dlg-view" class="easyui-dialog" style="width:530px;height:500px" closed="true">
+    <table id="table-view" class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+
+function onTypeChange(val) {
+	$.get('/finance/drawing/account/data/?type='+val, function (result) {
+		result = eval('('+result+')');
+		if(result.success && result.total > 0){
+			$('#id_account_number').textbox('setValue', result.rows[0].account_number);
+			$('#id_account_name').textbox('setValue', result.rows[0].account_name);
+			$('#id_account_bank').textbox('setValue', result.rows[0].account_bank);
+		}
+	});
+}
+
+$(function(){
+	{% if success == 'true' %}
+	$.messager.alert('提示', '提现申请提交成功！', 'info', function () {
+		window.location.href = '/finance/drawing/record/';
+	});
+	{% elif success == 'false' %}
+	$.messager.alert('提示', '{{msg}}', 'error');
+	{% endif %}
+});
+</script>
+{% endblock %}
+
+{% block breadcrumbs %} 财务管理 > 提现{% endblock %}
+{% block content %}
+<form id="fm" method="post" action=".">
+	<table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+	{% csrf_token %}
+	{% for field in form %}
+		<tr>
+			<th>{{field.label_tag}}</th>
+			<td>{{field}}<span id="err_{{field.name}}" style="color:red; margin-left:5px"></span><div>{{field.help_text}}</div> {{ field.errors }}</td>
+		</tr>
+	 {% endfor %}
+		<tr>
+			<th></th>
+			<td><input type="submit" value=" 保  存 "></td>
+		</tr>
+	</table>
+</form>
+{% endblock %}

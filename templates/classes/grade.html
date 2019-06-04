@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script language="javascript">
+var url;
+var _currentEditDatagrid;
+
+$(function() {
+	$('#dg_category0').datagrid({
+        onClickRow : function(rowIndex, rowData){
+            $('#dg_category1').datagrid({
+                url:'/class/class/data/?grade_id='+rowData.id,
+                pageNumber:1,
+                title: '[' + rowData.name+']班级'
+            });
+            $('#fm_subcategory #id_category').val(rowData.id);
+            $('#td-category').html(rowData.name);
+        }
+    });
+
+	$('#dg_category1').datagrid({
+        onClickRow : function(rowIndex, rowData){
+            $('#dg_category2').datagrid({
+                url:'/class/class/data/?grade_id='+rowData.id,
+                pageNumber:1,
+                title: '[' + rowData.name+']班级'
+            });
+            $('#fm_subcategory #id_category').val(rowData.id);
+            $('#td-category').html(rowData.parent_name);
+        }
+    });
+});
+
+function addcategory(){
+	$('#dlg_category').dialog('open').dialog('setTitle','添加年级');
+	$('#fm_category').form('reset');
+	_currentEditDatagrid = '#dg_category0';
+
+	url = '/class/grade/save/';
+}
+
+function editcategory(){
+	var row = $('#dg_category0').datagrid('getSelected');
+	if (row){
+		$('#dlg_category').dialog('open').dialog('setTitle','编辑年级信息');
+		$('#fm_category').form('reset');
+
+        var data = row;
+        delete data.icon;
+		$('#fm_category').form('load',data);
+
+		_currentEditDatagrid = '#dg_category0';
+		url = '/class/grade/save/?id='+row.id;
+	}
+}
+
+function addsubcategory(dg, dgParent, level){
+    var row = $(dgParent).datagrid('getSelected');
+    if(row == null){
+        $.messager.alert('错误', '请先选中一个年级！', 'error');
+        return;
+    }
+
+	$('#dlg_subcategory').dialog('open').dialog('setTitle','添加班级');
+	$('#fm_subcategory').form('reset');
+    $('#fm_subcategory #id_grade').val(row.id);
+    //$('#fm_subcategory #id_level').val(level);
+    _currentEditDatagrid = dg;
+
+	url = '/class/class/save/';
+}
+
+function editsubcategory(dg){
+	var row = $('#dg_category1').datagrid('getSelected');
+	if (row){
+		$('#dlg_subcategory').dialog('open').dialog('setTitle','编辑班级信息');
+		$('#fm_subcategory').form('reset');
+		$('#fm_subcategory').form('load',row);
+		_currentEditDatagrid = dg;
+
+		url = '/class/class/save/?id='+row.id;
+	}
+}
+
+function save(fm, dlg){
+	$(fm).form('submit',{
+		url: url,
+		onSubmit: function(){
+			return $(fm).form('validate');
+		},
+		success: function(result){
+			var result = eval('('+result+')');
+			if (result.success){
+				$(dlg).dialog('close');
+				$(_currentEditDatagrid).datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+		}
+	});
+}
+
+/*function del(dg){
+	var row = $(dg).datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除吗?',function(r){
+			if (r){
+				$.get('/class/grade/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$(dg).datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+			}
+		});
+	}
+}*/
+
+function onIconChange(newValue,oldValue){
+	readURL($('input[type=file][name=photo]')[0], '#id_photo_preview', {width:120, height:148});
+}
+
+function formatIcon(value,row,index) {
+	return "<img src='"+value+"' height='50' width='50'>";
+}
+
+var params = {};
+function search(value,name){
+	params = {
+        'q':name,
+        'keyword':value
+    };
+    $('#dg_group').datagrid('reload',params);
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}幼儿园管理 > 年级管理{% endblock %}
+{% block content %}
+<div class="easyui-layout" fit="true">
+    <div data-options="region:'west',border:false, split:true"  style="width:500px;" >
+        <table id="dg_category0" class="easyui-datagrid" fit="true"
+                    url="/class/grade/data/"
+                    toolbar="#category_toolbar"
+                    title="年级"
+                    fitColumns="true"
+                    singleSelect="true"
+                    pagination="false"
+                    idField='id' nowrap="false" striped="true" rownumbers="true">
+            <thead>
+                <tr>
+                    <th field="name" width="60">名称</th>
+                    <th field="kindergarten" width="130">幼儿园</th>
+                    <th field="introduction" width="200">年级介绍</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+    <div data-options="region:'center',border:false, split:true">
+        <table id="dg_category1" class="easyui-datagrid"  fit="true"
+                    toolbar="#subcategory_toolbar1"
+                    title="班级"
+                    fitColumns="true"
+                    pagination="false"
+                    singleSelect="true"
+                    idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+            <thead>
+                <tr>
+                    <th field="name" width="100" align="center">名称</th>
+                    <th field="teacher" width="140">教师</th>
+                    <th field="introduction" width="150">班级介绍</th>
+{#                    <th field="quantity" width="30" align="center">人数</th>#}
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<div id="category_toolbar">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addcategory()">添加</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editcategory()">修改</a>
+{#	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="del('#dg_category0')">删除</a>#}
+</div>
+
+<div id="subcategory_toolbar1">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="addsubcategory('#dg_category1', '#dg_category0', 1)">添加</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editsubcategory('#dg_category')">修改</a>
+{#	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="del('#dg_category1')">删除</a>#}
+</div>
+
+<div id="dlg_category" class="easyui-dialog" closed="true" buttons="#category_buttons">
+	<form id="fm_category" method="post" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+		{% for field in form.visible_fields %}
+			<tr>
+				<th width="110px">{{field.label_tag}}</th>
+				<td>{{field}}<span>{{field.help_text}}</span></td>
+			</tr>
+        {% endfor %}
+        </table>
+		{% for field in form.hidden_fields %}
+		{{ field }}
+		{% endfor %}
+	</form>
+</div>
+
+<div id="category_buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save('#fm_category', '#dlg_category')">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg_category').dialog('close')">取消</a>
+</div>
+
+<div id="dlg_subcategory" class="easyui-dialog" closed="true" buttons="#subcategory_buttons">
+	<form id="fm_subcategory" method="post" novalidate>
+        {% csrf_token %}
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+			<tr>
+				<th width="70px">年级:</th>
+				<td id="td-category"></td>
+			</tr>
+		{% for field in form_sub.visible_fields %}
+			<tr>
+				<th>{{field.label_tag}}</th>
+				<td>{{field}}<div>{{field.help_text}}</div></td>
+			</tr>
+        {% endfor %}
+        </table>
+		{% for field in form_sub.hidden_fields %}
+		{{ field }}
+		{% endfor %}
+	</form>
+</div>
+
+<div id="subcategory_buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save('#fm_subcategory', '#dlg_subcategory')">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg_subcategory').dialog('close')">取消</a>
+</div>
+
+{% endblock %}

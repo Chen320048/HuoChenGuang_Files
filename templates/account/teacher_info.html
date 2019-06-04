@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block js %}
+<script>
+    function save(btn){
+        $('#fm').form('submit',{
+            url: '{% url  'teacher_info_save' %}',
+            onSubmit: function(){
+                var valid = $.submitValidate('#fm');
+                if(valid) $(btn).linkbutton("disable");
+                return valid;
+            },
+            success: function(result){
+                result = eval('('+result+')');
+                if (result.success){
+                    $.messager.alert('提示', '修改成功！我们会尽快审核。', 'info', function () {
+                        location.reload();
+                    });
+                } else {
+                    $.messager.alert('错误', result.errors, 'error');
+                }
+
+                $(btn).linkbutton("enable");
+            }
+        });
+    }
+
+    function addSubject() {
+        $('#dlg-subject').dialog('open');
+    }
+
+    function saveSubject(btn) {
+        var grade = $('#id_grade').combobox('getValue');
+        var subject = $('#id_subject').combobox('getValue');
+        var gradeText = $('#id_grade').combobox('getText');
+        var subjectText = $('#id_subject').combobox('getText');
+        if(grade == ''){
+            $.messager.alert('错误', '请选择年级！', 'error');
+            return;
+        }
+        if(subject == ''){
+            $.messager.alert('错误', '请选择课程！', 'error');
+            return;
+        }
+
+        $.get('/account/teacher/subject/add/?grade='+grade+'&subject='+subject, function (result) {
+            result = eval('('+result+')');
+            if(result.success){
+                if(result.data.created)
+                    $('#td-subjects').append('<p>'+gradeText+subjectText+' [<a href="#" onclick="removeSubject('+result.data.id+', this)">删除</a>]</p>');
+                $('#dlg-subject').dialog('close');
+            }else{
+                $.messager.alert('提示', result.errors, 'error');
+            }
+        });
+    }
+
+    function removeSubject(id, ele) {
+        $.messager.confirm('提醒','确定要删除吗?',function(r){
+            if(r){
+                $.get('/account/teacher/subject/del/?id='+id, function (result) {
+                    result = eval('('+result+')');
+                    if(result.success){
+                        $(ele).parent().remove();
+                    }else{
+                        $.messager.alert('提示', result.errors, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function onGradeChange(newVal) {
+        $('#id_subject').combobox('clear');
+        $('#id_subject').combobox('reload', '/basic/subject/combo/data/?grade='+newVal)
+    }
+</script>
+{% endblock %}
+{% block breadcrumbs %}系统管理 > 教师资料 {% endblock %}
+{% block content %}
+<form id="fm" method="post" action="" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+    {% for field in form_teacher.visible_fields %}
+        <tr>
+            <th>{{field.label_tag}}</th>
+            <td>
+                {% if field.name == 'photo' or field.name == 'license' or field.name == 'IDcard' %}
+                <img src="/media/{{field.value}}" height="50px" style="margin-bottom: 5px"/><br>
+                {% endif %}
+                {{field}}
+            </td>
+        </tr>
+    {% endfor %}
+        <tr>
+            <th>
+                年级和课程：
+                {% if user.bind_teacher.status != Teacher.PASS %}
+                [<a href="#" onclick="addSubject()">添加</a>]
+                {% endif %}
+            </th>
+            <td id="td-subjects">
+                {% for item in instance.get_grade_and_subjects %}
+                <p>
+                {{item.grade_text}}{{item.subject_text}}
+                {% if user.bind_teacher.status != Teacher.PASS %}
+                [<a href="#" onclick="removeSubject({{item.id}}, this)">删除</a>]
+                {% endif %}
+                </p>
+                {% endfor %}
+            </td>
+        </tr>
+    {% if user.bind_teacher.status != Teacher.PASS %}
+        <tr>
+            <th></th>
+            <td>
+                <a href="#" class="easyui-linkbutton" onclick="save(this)" iconCls="icon-ok" style="padding:5px 40px; font-size:9pt; background:#3994c7; color:#fff">提交</a>
+                {% if user.bind_teacher.status == Teacher.REJECT %}
+                <span style="color:red" id="span-reject">您提交的资料审核被拒绝，请尽快修改！</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endif %}
+    </table>
+    {% for field in form_teacher.hidden_fields %}
+    {{ field }}
+    {% endfor %}
+</form>
+
+<div id="dlg-subject" class="easyui-dialog" closed="true" buttons="#dlg-subject-buttons" title="添加年级和课程">
+    <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0 style="border-bottom: 0">
+        <tr>
+            <th width="80">年级:</th>
+            <td><input class="easyui-combobox" id="id_grade"size="40" type="text" data-options="url:'/basic/grade/combo/data/', valueField:'id', textField:'name',onChange:onGradeChange" /></td>
+        </tr>
+        <tr>
+            <th width="80">课程:</th>
+            <td><input class="easyui-combobox" id="id_subject"size="40" type="text" data-options="valueField:'id', textField:'name'"/></td>
+        </tr>
+    </table>
+</div>
+
+<div id="dlg-subject-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="saveSubject(this)">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-subject').dialog('close')">取消</a>
+</div>
+{% endblock %}

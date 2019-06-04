@@ -1,0 +1,14 @@
+<uwsgi>
+    <socket>0.0.0.0:10006</socket>
+    <chdir>/www/web/ningmeng/</chdir>
+    <pythonpath>/www/web/ningmeng/ningmeng/</pythonpath>
+    <plugins>python</plugins>
+    <module>wsgi</module>
+    <workers>2</workers>
+    <socket-timeout>30</socket-timeout>
+    <post-buffering>8192</post-buffering>
+    <uid>www</uid>
+    <master>true</master>
+    <enable-threads>true</enable-threads>
+    <daemonize>/www/log/ningmeng.log</daemonize>
+</uwsgi>

@@ -1,0 +1,115 @@
+/*
+ 自定义 样式
+*/
+body {font-family: "Microsoft YaHei"; max-width: 640px; margin: 0 auto; overflow-x: hidden;}
+li{ list-style: none;}
+.cs-text-c{ text-align: center;}
+.cs-text-r{ text-align: right;}
+.cs-m-b06{ margin: 0 0 0.6rem 0;}
+.bb-no{ border-bottom: 0 !important;}
+/*宽度*/
+.w100{ width: 100%;}
+.bw8 { max-width: 80% !important;}
+/*外间距*/
+.mar0{ margin: 0px !important;}
+.ml5{ margin-left: 5px;}
+.ml10{ margin-left: 5px;}
+.mr5{ margin-right: 5px;}
+.mr10{ margin-right: 10px;}
+.mt0{ margin-top: 0px;}
+.mt5{ margin-top: 5px;}
+.mt10{ margin-top: 10px;}
+.mt5b10{ margin-top: 5px;margin-bottom: 10px;}
+.mtb15{ margin-top: 15px;margin-bottom: 15px;}
+.mtb30{ margin-top: 30px;margin-bottom: 30px;}
+.mb0{ margin-bottom: 0px;}
+.mb5{ margin-bottom: 5px;}
+.mb10{ margin-bottom: 10px;}
+.mb20{ margin-bottom: 20px;}
+.mb30{ margin-bottom: 30px;}
+/*内间距*/
+.padl0r0{ padding-left:0; padding-right: 0;}
+.pad10{ padding:10px;}
+.pad20{ padding:20px;}
+.padb20{ padding-bottom:20px;}
+.pad-lr15{ padding: 0 15px;}
+.pad-lr20{ padding: 0 20px;}
+.ptb20{ padding-bottom: 20px; padding-top: 20px;}
+.plr10{ padding-left: 10px; padding-right: 10px;}
+/*背景*/
+.cs-bg-fff{ background: #ffffff;}
+.cs-bg-eee{ background: #eeeeee;}
+/*颜色*/
+.color-q{ color: #1bbc9b;}
+.color-r{ color: #e62129;}
+.color-9{ color: #999999;}
+.color-6{ color: #666666;}
+.color-3{ color: #333333;}
+.color-0{ color: #000000;}
+.color-lan{ color: #70affc;}
+.color-zi{ color: #8892f3;}
+.color-huang{ color: #fcab5c;}
+
+/*大小*/
+.ft14{ font-size: 14px;}
+.ft16{ font-size: 16px;}
+.ft18{ font-size: 18px;}
+.ft20{ font-size: 20px;}
+.ft30{ font-size: 30px;}
+/*灰间距*/
+.h10-h{ background: #eee; height: 10px; line-height: 10px;}
+/*课程详情*/
+.kc-y-tit-l{ margin: 15px 0 10px; font-size: 20px; font-weight: 600;}
+.kc-y-an-r{margin: 18px 0 0;}
+.kc-y-an-r i{margin:0 5px 0 0;}
+.kc-y-an-r a{  font-size: 16px; padding: 8px 12px; border: 1px solid #999; color: #999; border-radius: 6px; }
+.kc-y-an-r .an—hover{  font-size: 16px; padding: 8px 12px; border: 1px solid #1bbc9b; background: #1bbc9b; color: #fff; border-radius: 6px; }
+.kc-ye-tit-l{ margin: 0 0 10px;}
+/*老师 */
+.kc-e-ls{ padding: 8px 15px; height: 65px;}
+/*课程列表 */
+.kclb-tit{ padding: 15px 0; border-bottom: 1px solid #ddd;  }
+.kclb-tit span { text-align: left; padding-left: 12px; border-left: 3px solid #e62129;font-size: 20px; font-weight: 600;}
+/*课程目录*/
+.kcml-div{}
+.kcml-div .shuzi{ width: 50px; height: 40px;line-height: 30px; text-align: center; float: left; color: #999;}
+.kcml-div .ml-tit{float: left; display: block; font-size: 18px; line-height: 30px; }
+.kcml-div .ml-list{float: left; margin-left: 50px;  border-bottom: 1px solid #ddd; padding-bottom: 5px;  }
+.kcml-div .ml-list li{ float: left; margin-right: 10px; padding: 8px 4px; width: 90px; height: 40px; overflow: hidden; text-align: center; border: 1px solid #999; color: #999;  border-radius:4px; margin-bottom: 12px; }
+.kcml-div .zhuangtai-1 {  border: 1px solid #1bbc9b !important; color: #1bbc9b !important; }
+.kcml-div .zhuangtai-2 {  border: 1px solid #1bbc9b !important; background: #1bbc9b !important; color: #fff !important; }
+
+/*晨师教育*/
+.csjy-div{ line-height: 49px; border-bottom: 1px solid #ddd;}
+.csjy-div i{ font-size: 24px; line-height: 49px; vertical-align: middle;}
+/*我的推广*/
+.wdtg-anniu{ border-radius: 25px; margin:0 auto 35px; border: 1px solid #1bbc9b; display: block; width: 80%; height: 50px; line-height: 50px; font-size: 20px; color: #1bbc9b; text-align: center;}
+
+/*订单详情*/
+	/*色条*/
+.cs-bg-setiao{ background: #ffffff url(../../images/cs/ddxq-setiao.png) bottom left no-repeat; background-size: 100%;}
+.zdxx-list-div dd{ float: left; clear: both; display: table; }
+.zdxx-list-div span{ float: left; width: 100px; text-align: right;  }
+.zdxx-list-div p{ float: left; text-align: left; margin: 0; color: #666; }
+.zdxx-list-div .xz{ position: absolute; right: 20px; width: 90px; height: 40px; line-height: 40px; overflow: hidden; text-align: center; border: 1px solid #e62129; color: #e62129;  border-radius:40px;}
+
+.zdxx-cp-div{ padding: 10px 0; border: 1px solid #ddd; border-left: 0; border-right: 0; background: #fff; }
+.zdxx-cp-div .img { float: left; width: 120px; margin-right: 10px; position: absolute; left: 10px;}
+.zdxx-cp-div .cp-con { display:inline-table; width: 100%; padding-left: 130px; }
+.zdxx-cp-list{ float: left; padding-bottom: 10px; margin: 10px 0 0 0; border-bottom: 1px solid #ddd; height: 175px;}
+/*教师详情*/
+.jsxq-list-div dd{ float: left; clear: both; display: table; }
+.jsxq-list-div span{ float: left; width: 100px; text-align: right; position: absolute; margin-right: 100px;  }
+.jsxq-list-div p{ float: left; text-align: left; margin: 0; color: #666;margin-left: 105px;  padding-right: 10px; }
+/*提问详情*/
+.zdxx-list-div .xz-q{ position: absolute; right: 10px; width: 90px; height: 40px; line-height: 40px; overflow: hidden; text-align: center; border: 1px solid #1bbc9b; color: #1bbc9b;  border-radius:40px;}
+
+
+
+
+
+
+
+
+
+

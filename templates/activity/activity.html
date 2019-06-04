@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+var url;
+
+function detail() {
+    var row = $('#datagrid').datagrid('getSelected');
+    let details = row.detail
+    $('#dlg-detail').empty()
+    $('#dlg-detail').append(details)
+    $('#fm').form('reset');
+    $('#fm').form('load',row);
+    $('#dlg-detail').dialog('open').dialog('setTitle', '查看详情');
+}
+
+
+function doImport(){
+	$('#fm-import').form('submit',{
+		url: '/account/import/',
+		onSubmit: function(){
+			return $('#fm-import').form('validate');
+		},
+		success: function(result){
+			var result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-import').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+		}
+	});
+}
+
+function save(btn){
+	$('#fm').form('submit',{
+		url: url,
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+
+function removeAccount(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除该用户吗?',function(r){
+			if (r){
+				$.get('/account/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+
+			}
+		});
+	}
+}
+
+
+
+function formatStatus(value,row,index) {
+	if(row.status == 1){
+		return '<font color="red">已结束</font>'
+	}
+	return "进行中";
+}
+
+function active(status){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row == null){
+		$.messager.alert('提醒', "请在列表中选择一个活动。", 'info');
+		return;
+	}
+
+	$.get('/activity/control/?id='+row.id+'&status='+status, function(result){
+		result = eval('('+result+')');
+		if (result.success){
+			$('#datagrid').datagrid('reload');
+		} else {
+			$.messager.alert('错误', result.errors, 'error');
+		}
+	});
+}
+
+//搜索
+function search(value,name){
+	$('#datagrid').datagrid('reload',{
+        q:name,
+        keyword:value
+    });
+}
+// 双击查看大图 1
+function formatImage(value, row, index) {
+            if (value == undefined || value == "") {
+                return "";
+            }
+
+            return "<img src='" + value + "' height='80' onclick=\"openImage('" + value + "');\" width='100'>";
+        }
+        function openImage(value) {
+            $('#dlg-image').dialog('open').dialog('setTitle', '查看图片');
+            $("#id_image").attr("src", value);
+        }
+function formatAction(value,row,index) {
+    return '<a href="javascript:;" title="查看详情" onclick="look(this)">'+ row.title + '</a><div style="display:none">'+ row.detail + '</div>'
+}
+
+function look(which) {
+    let div = which.nextSibling
+    let details = div.innerHTML
+    $('#dlg-detail').empty()
+    $('#dlg-detail').append(details)
+    $('#dlg-detail').dialog('open').dialog('setTitle', '查看详情');
+}
+
+
+</script>
+    <script type="text/javascript" src="/static/ueditor/ueditor.config.js"></script>
+    <script type="text/javascript" src="/static/ueditor/ueditor.all.min.js"></script>
+{% endblock %}
+
+{% block breadcrumbs %}活动管理 > 活动 {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+			url="/activity/data/"
+			toolbar="#toolbar"
+            fit="true"
+			pagination="true"
+			singleSelect="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+        <tr>
+            <th field="title" width="300" align="center" formatter="formatAction">活动标题</th>
+			<th field="create_time" width="200" align="center">发起时间</th>
+            <th field="create_user_name" width="150" align="center">发布人</th>
+        </tr>
+    </thead>
+</table>
+
+<div id="toolbar">
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="detail()">查看详情</a>
+	<div style="float:right;margin:2px;">
+
+		<input id="ss" name="title" class="easyui-searchbox" searcher="search"  prompt="请输入标题" style="width:150px" />
+		<input id="ss" name="user" class="easyui-searchbox" searcher="search"  prompt="请输入发起人" style="width:150px" />
+	</div>
+
+
+
+    <div style="clear:both;"></div>
+</div>
+
+
+
+<div id="dlg-detail" class="easyui-dialog" style="width:900px;height:650px;"
+    closed="true" buttons="#dlg-saveuser-buttons">
+
+</div>
+<div id="dlg-saveuser-buttons">
+{#	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>#}
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-detail').dialog('close')">取消</a>
+</div>
+
+
+<div id="dlg-import" class="easyui-dialog" closed="true" buttons="#import-buttons" style="width:450px;">
+	<form id="fm-import" method="post" novalidate enctype="multipart/form-data">
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+			<tr>
+				<th>数据文件：</th>
+				<td><input class="easyui-filebox" name="excel_file" data-options="prompt:'选择数据文件...', buttonText:'选择'" style="width:350px;"></td>
+			</tr>
+        </table>
+		<input type="hidden" id="department_id" name="department_id">
+	</form>
+</div>
+
+<div id="import-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="doImport()">导入</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-import').dialog('close')">取消</a>
+</div>
+    <!-- 双击查看大图的div -->
+    <div id="dlg-image" class="easyui-dialog" style="width:450px;height:450px;"
+         closed="true" buttons="#dlg-image-buttons">
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+            <tr>
+                <td align="center" valign="center"><img id="id_image" width="420px" height="360px"></td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="dlg-image-buttons">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-cancel"
+           onclick="javascript:$('#dlg-image').dialog('close')">取消</a>
+    </div>
+
+{% endblock %}

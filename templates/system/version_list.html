@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block css %}
+
+{% endblock %}
+
+{% block js %}
+
+<script type="text/javascript">
+$(function() {  
+     $('#datagrid').resizeDataGrid(0, 20, $(this).height()-40,0);
+});
+
+
+function add(){
+	location.href = '/system/version/add/';
+}
+
+function edit(){
+    var row = $('#datagrid').datagrid('getSelected');
+    if (row){
+        location.href = '/system/version/edit/?id='+row.id;
+    }
+}
+
+function removeRow(){
+	var ids = [];
+    var rows = $('#datagrid').datagrid('getSelections');   //选择多行
+    for(var i=0; i<rows.length; i++){
+		ids.push(rows[i].id);
+	}
+
+    if(ids.length > 0) {
+        $.messager.confirm('提醒','确定要删除选中的数据吗?',function(r){
+            if (r){
+                $.post('/system/version/delete/', {'ids':ids.join(',')}, function(result){
+                	result = eval('('+result+')');
+                    if (result.success){
+                        $('#datagrid').datagrid('reload');  // reload the user data
+                        $('#datagrid').datagrid('clearSelections');
+                    } else {
+                        $.messager.alert('错误', result.errors, 'error');
+                    }
+                });
+            }
+        });
+    }
+	else{
+		$.messager.alert('提醒','没有选中任何行！请先选中待删除数据前面的复选框。')
+	}
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}版本管理{% endblock %}
+{% block content %}
+
+<table id="datagrid" class="easyui-datagrid"
+			url="/system/version/list/data/" 
+			toolbar="#toolbar"
+			fitColumns="true"
+			iconCls='icon-edit'
+			pagination="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			method="post"
+			idField='id' nowrap="false" striped="true" border="true" rownumbers="true">  
+    <thead>  
+        <tr> 
+            <th field="ck" checkbox="true"></th>
+            <th field="platform" width="60">平台</th>
+            <th field="version" width="60">版本号</th>
+            <th field="title" width="200">标题</th>  
+            <th field="content" width="300">内容</th>  
+			<th field="created" width="160">发布时间</th>  
+			<th field="username" width="100">发布人</th>  
+        </tr>
+    </thead>
+</table>
+
+<div id="toolbar">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">发布新版本</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="removeRow()">删除</a>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script language="javascript">
+    function check() {
+        platform = $('#id_platform').combobox('getValue');
+        version = jQuery.trim($('#id_version').textbox('getValue'));
+        title = jQuery.trim($('#id_title').textbox('getValue'));
+        content = jQuery.trim($('#id_content').textbox('getValue'));
+        filename = $('#id_filename').val();
+
+        $('#id_title').val(title);
+        $('#id_content').val(content);
+
+        if (version == '' || title == "" || content == "") {
+            alert("请填写版本号、标题、内容!");
+            return false;
+        }
+
+        if((platform == 1 || platform == 3) && isNaN(version) == true) {
+            alert("版本号必须输入数字!");
+            return false;
+        }
+
+        if (filename == '') {
+            alert("请上传文件!");
+            return false;
+        }
+
+       ext = filename.substring(filename.lastIndexOf('.') + 1) ;
+       if ((platform == 1 || platform == 3) && ext != "apk") {
+          alert("请上传apk文件!");
+          return false;
+       }else if (platform == 2 && ext != "ipa") {
+          alert("请上传ipa文件!");
+          return false;
+       }
+
+        var c = confirm('确实要发布新版本:[' + version + '] 吗?');
+        return c;
+    }
+</script>
+{% endblock %}
+{% block breadcrumbs %}版本管理 > 发布新版本{% endblock %}
+{% block content %}
+	<div class="field{% if form.message.errors %} errors{% endif %}">
+	{% if form.message.errors %}
+		<ul>
+		{% for error in form.message.errors %}
+			<li><strong>{{ error }}</strong></li>
+		{% endfor %}
+		</ul>
+	{% endif %}
+	{{ form.message }}
+	</div>
+    <form action="/system/version/add/" method="post" enctype="multipart/form-data" onsubmit="return check();">{% csrf_token %} 
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+         {{ form.as_table }}
+			<tr>
+				<th></th>
+				<td><input type="submit" value="保存" class="btn">&nbsp;&nbsp;&nbsp;<input type="button"  class="cancel" onclick="javascript:history.back()" value="返回"></td>
+			</tr>
+        </table>
+    </form>
+{% endblock %}

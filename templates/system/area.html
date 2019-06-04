@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+var url;
+var _currentProvince = null;
+var _currentRow;
+
+$(function(){
+    $('#id_province').change(onProvinceChange);
+});
+
+function add(){
+	$('#dlg-edit').dialog('open').dialog('setTitle','添加行政区域');
+	$('#fm').form('reset');
+	_currentProvince = null;
+
+	url = '/system/area/save/';
+}
+
+function edit(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$('#fm').form('reset');
+		$('#fm').form('load',row);
+		_currentProvince = row.province;
+
+		if(row.level == 0){
+			$('#id_province').parent().parent().hide();
+		}else{
+            $("#id_province option:contains('"+row.province+"')").attr('selected', true);
+        }
+
+		url = '/system/area/save/?id='+row.id;
+
+		$('#dlg-edit').dialog('open').dialog('setTitle','编辑行政区域');
+	}
+}
+
+function save(btn){
+	$('#fm').form('submit',{
+		url: url,
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+
+function del(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除吗?',function(r){
+			if (r){
+				$.get('/system/area/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+			}
+		});
+	}
+}
+
+function onProvinceChange(){
+    var province = encodeURIComponent($('#id_province option:selected').text());
+	$.get( "/system/area/options/?datatype=&type=city&province="+province,
+            function( data ) {
+                $('#id_city option').remove();
+                $('#id_city').append(data);
+            }
+    );
+}
+
+function reload(){
+	$('#datagrid').datagrid('reload', {province:$('#province').combobox('getValue').replace(/-/g, '')});
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}基础信息 > 车型信息  {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+            url="/system/area/data/"
+            toolbar="#toolbar"
+            pagination="true"
+            fit="true"
+            fitColumns="true"
+            singleSelect="true"
+            pageSize="{{settings.PAGE_SIZE}}"
+            idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+        <tr>
+            <th field="name" width="100">名称</th>
+            <th field="level_text" width="80">层级</th>
+            <th field="province" width="120">所属省</th>
+        </tr>
+    </thead>
+</table>
+
+
+<div id="toolbar" >
+	<div style="float:right; margin:2px;">
+		<select id="province" class="easyui-combobox" style="width:120px" data-options="buttonText:'省',buttonAlign:'left',editable:false">
+			<option value='' selected>------</option>
+			{% for item in provinces %}
+			<option value="{{item.name}}">{{item.name}}</option>
+			{% endfor %}
+		</select>
+		<a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-reload'" style="height:22px;" onclick="reload()">查询</a>
+	</div>
+
+
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">修改</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="del()">删除</a>
+    <div style="clear:both;"></div>
+</div>
+
+<div id="dlg-edit" class="easyui-dialog" style="width:600px;"
+		closed="true" buttons="#dlg-buttons">
+	<form id="fm" method="post" novalidate>
+		{% csrf_token %}
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+		{% for field in form.visible_fields %}
+			<tr>
+				<th>{{field.label_tag}}</th>
+				<td>{{field}}<div>{{field.help_text}}</div>
+				</td>
+			</tr>
+         {% endfor %}
+        </table>
+		{% for field in form.hidden_fields %}
+		{{ field }}
+		{% endfor %}
+	</form>
+</div>
+
+<div id="dlg-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+</div>
+{% endblock %}

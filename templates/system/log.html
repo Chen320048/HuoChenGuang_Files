@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script language="javascript">
+$(function() {
+	var date = new Date();
+	var date_begin = date.getFullYear() + "-" + (date.getMonth()+1) + "-01";
+	var date_end = date.getFullYear() + "-" + (date.getMonth()+1) + '-' + date.getDate();
+	$('#date_begin').datebox("setValue", date_begin);
+	$('#date_end').datebox("setValue", date_end);
+
+    $('#datagrid').datagrid({url:"/system/log/data/?date_begin="+date_begin+"&date_end="+date_end});
+
+});
+
+var params = {};
+function search(value,name){
+	params = {
+        'q':name,
+        'keyword':value,
+		'date_begin':$('#date_begin').datebox('getValue'),
+		'date_end':$('#date_end').datebox('getValue')
+    };
+    $('#datagrid').datagrid('load',params);
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}系统管理 > 查询日志 {% endblock %}
+{% block content %}
+
+<table id="datagrid" class="easyui-datagrid"
+			iconCls='icon-options'
+			toolbar="#toolbar" fit="true"
+			fitColumns="true"
+			pagination="true"
+			singleSelect="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			idField='id' nowrap="false" striped="true" border="true" rowNumbers="true">
+	<thead>
+		<tr>
+			<th field="user_text" width="80">账号</th>
+			<th field="type_text" width="80">操作类别</th>
+			<th field="create_time" width="120">时间</th>
+			<th field="description" width="300">操作</th>
+		</tr>
+	</thead>
+</table>
+
+<div id="toolbar">
+	<div style="float:right; margin:2px;">
+		<input id="date_begin" class="easyui-datebox" style="width:140px" data-options="buttonText:'时间',buttonAlign:'left'"> 至 <input id="date_end" class="easyui-datebox" style="width:95px">
+
+		<input id="ss" class="easyui-searchbox" searcher="search"  prompt="请输入关键字" menu="#searchmm" style="width:250px" />
+		<div id="searchmm" style="width:120px">  
+			<div data-options="name:'description'" name='description' iconCls="icon-edit" >操作</div>  
+			<div data-options="name:'name'" name='name' iconCls="icon-person" >工号</div>
+		</div> 
+	</div>
+
+	<a href="#" class="easyui-splitbutton" menu="#type_mm" iconCls="icon-item">按操作类别查看</a>
+	<div id="type_mm" style="width:90px;">
+		{% for type in types %}
+		<div iconCls="icon-options" onclick="search({{type.0}}, 'type')">{{type.1}}</div>
+		{% endfor %}
+	</div>
+	<div style="clear:both;"></div>
+</div>
+
+{% endblock %}

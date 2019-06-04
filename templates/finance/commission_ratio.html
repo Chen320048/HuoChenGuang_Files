@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script language="javascript">
+var url;
+
+function add(){
+	$('#dlg-edit').dialog('open').dialog('setTitle','添加新设置');
+	$('#fm').form('reset');
+	$('.err').each(function (){
+		$(this).html("");
+	});
+	url = '/finance/commission_ratio/save/';
+}
+
+function edit(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$('#dlg-edit').dialog('open').dialog('setTitle','编辑设置');
+		$('#fm').form('reset');
+		$('#fm').form('load',row);
+
+		$('.err').each(function (){
+			$(this).html("");
+		});
+		url = '/finance/commission_ratio/save/?id='+row.id;
+	}
+}
+
+function save(btn){
+	$('#fm').form('submit',{
+		url: url,
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			var result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');	
+				$('#datagrid').datagrid('reload');	
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+
+function del(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除该设置吗?',function(r){
+			if (r){
+				$.get('/finance/commission_ratio/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+			}
+		});
+	}
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}基础数据 > 分成比例设置 {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+			url="/finance/commission_ratio/data/"
+			toolbar="#toolbar" fit="true"
+			fitColumns="true"
+			pagination="true"
+			singleSelect="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+            rowNumbers="true"
+			idField='id' nowrap="true" striped="true" border="true">
+	<thead>
+		<tr>
+            <th field="type_text" width="100">类别</th>
+			<th field="user" width="100">教师</th>
+			<th field="platform" width="100">平台</th>
+		</tr>
+	</thead>
+</table>
+
+<div id="toolbar">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">修改</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="del()">删除</a>
+</div>
+
+<div id="dlg-edit" class="easyui-dialog" style="width:600px;"
+		closed="true" buttons="#dlg-buttons">
+	<form id="fm" method="post" novalidate>
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+		{% csrf_token %}
+		{% for field in form.visible_fields %}
+			<tr>
+				<th>{{field.label_tag}}</th>
+				<td>{{field}}<span>{{field.help_text}}</span></td>
+			</tr>
+         {% endfor %}
+        </table>
+		{% for field in form.hidden_fields %}
+		{{ field }}
+		{% endfor %}
+	</form>
+</div>
+
+
+<div id="dlg-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save(this)">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+</div>
+
+{% endblock %}

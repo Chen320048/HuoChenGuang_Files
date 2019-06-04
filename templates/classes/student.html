@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+var url;
+var q = ''
+var keyword = ''
+function add(){
+
+	$('#dlg-edit').dialog('open').dialog('setTitle','添加');
+	$('#account_form').form('reset');
+	$('#id_username').attr('readonly', false);
+	url = '/class/student/save/';
+}
+
+function edit(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+
+
+		$('#dlg-edit').dialog('open').dialog('setTitle','修改');
+		$('#account_form').form('reset');
+		$('#account_form').form('load',row);
+		url = '/class/student/save/?id='+row.id;
+	}
+}
+
+function batchImport(){
+	$('#dlg-import').dialog('open').dialog('setTitle','导入用户');
+	$('#fm-import').form('reset');
+}
+
+function exportData() {
+        var _params = {
+        q:q,
+        keyword:keyword
+    }
+            $.messager.confirm('提醒', '确定要导出吗?', function (r) {
+                if (r) {
+                    var options = $('#datagrid').datagrid('options');
+                    $.download(options.url, 'export=true&' + object2str(_params), 'post');
+                }
+            });
+        }
+
+function doImport(){
+	$('#fm-import').form('submit',{
+		url: '/account/import/',
+		onSubmit: function(){
+			return $('#fm-import').form('validate');
+		},
+		success: function(result){
+			var result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-import').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+		}
+	});
+}
+
+function save(btn){
+	$('#account_form').form('submit',{
+		url: url,
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+
+function removeAccount(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除该用户吗?',function(r){
+			if (r){
+				$.get('/account/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+
+			}
+		});
+	}
+}
+
+
+
+function formatStatus(value,row,index) {
+	if(value == false){
+		return '<font color="red">禁用</font>'
+	}
+	return "正常";
+}
+
+function active(status){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row == null){
+		$.messager.alert('提醒', "请在列表中选择一个账号。", 'info');
+		return;
+	}
+
+	$.get('/account/change_active/?id='+row.id+'&status='+status, function(result){
+		result = eval('('+result+')');
+		if (result.success){
+			$('#datagrid').datagrid('reload');
+		} else {
+			$.messager.alert('错误', result.errors, 'error');
+		}
+	});
+}
+
+//搜索
+function search(value,name){
+    q = name
+    keyword = value
+	$('#datagrid').datagrid('reload',{
+        q:name,
+        keyword:value
+    });
+}
+
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}学生管理 > 学生信息 {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+			url="{% url 'student_data' %}"
+			toolbar="#toolbar"
+            fit="true"
+			pagination="true"
+			singleSelect="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+        <tr>
+            <th field="name" width="120" align="center">姓名</th>
+            <th field="gender_text" width="100" align="center">性别</th>
+            <th field="age" width="60" align="center">年龄</th>
+			<th field="classes_name" width="200" align="center">班级</th>
+            <th field="grade" width="150" align="center">年级</th>
+            <th field="teacher" width="300">教师</th>
+            <th field="notes" width="300">备注</th>
+
+        </tr>
+    </thead>
+</table>
+
+<div id="toolbar">
+	<div style="float:right; margin:2px;">
+        {% if perms.account.manage_teacher%}
+            <a href="#" class="easyui-splitbutton" menu="#shop_mm" plain="false" iconCls="icon-options" style="height: 22px">按性别查询</a>
+                <div id="shop_mm" style="width:90px;">
+                    <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>
+                    <div iconCls="icon-item" onclick="search(0, 'gender')">男</div>
+                    <div iconCls="icon-item" onclick="search(1, 'gender')">女</div>
+                </div>
+        {% endif %}
+        {% if perms.account.manage_kindergardenor %}  <!-- 只有园长可以使用年级班级查询学生 -->
+            <a href="#" class="easyui-splitbutton" menu="#grade_mm" plain="false" iconCls="icon-options" style="height: 22px">按年级查询</a>
+                <div id="grade_mm" style="width:90px;">
+                    <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>
+                    {% for g in grade %}
+                       <div iconCls="icon-item" onclick="search({{ g.id }}, 'grade')">{{ g.name }}</div>
+                    {% endfor %}
+                </div>
+            <a href="#" class="easyui-splitbutton" menu="#class_mm" plain="false" iconCls="icon-options" style="height: 22px">按班级查询</a>
+                <div id="class_mm" style="width:90px;">
+                    <div iconCls="icon-reload" onclick="search(0, 'all')">全部</div>
+                    {% for c in class %}
+                       <div iconCls="icon-item" onclick="search({{ c.id }}, 'class')">{{ c.name }}</div>
+                    {% endfor %}
+                </div>
+        {% endif %}
+		<input id="ss" name="student_name" class="easyui-searchbox" searcher="search"  prompt="请输入学生姓名" style="width:150px" />
+	</div>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-export" plain="true" onclick="exportData()">导出</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">添加</a>
+    <a href="#" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="edit()">修改</a>
+
+    <div style="clear:both;"></div>
+</div>
+
+<div id="dlg-edit" class="easyui-dialog" style="width:600px;"
+		closed="true" buttons="#dlg-saveuser-buttons">
+	<form id="account_form" method="post" enctype="multipart/form-data">
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+            {% csrf_token %}
+            {% for field in form.visible_fields %}
+                <tr>
+                    <th width="150">{{field.label_tag}}</th>
+                    <td>
+                        {{field}}<div>{{field.help_text}}</div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+        {% for field in form.hidden_fields %}
+        {{ field }}
+        {% endfor %}
+	</form>
+</div>
+<div id="dlg-saveuser-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+</div>
+
+
+<div id="dlg-import" class="easyui-dialog" closed="true" buttons="#import-buttons" style="width:450px;">
+	<form id="fm-import" method="post" novalidate enctype="multipart/form-data">
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+			<tr>
+				<th>数据文件：</th>
+				<td><input class="easyui-filebox" name="excel_file" data-options="prompt:'选择数据文件...', buttonText:'选择'" style="width:350px;"></td>
+			</tr>
+        </table>
+		<input type="hidden" id="department_id" name="department_id">
+	</form>
+</div>
+
+<div id="import-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="doImport()">导入</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-import').dialog('close')">取消</a>
+</div>
+
+    <div id="dlg-image" class="easyui-dialog" style="width:450px;height:450px;"
+         closed="true" buttons="#dlg-image-buttons">
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+            <tr>
+                <td align="center" valign="center"><img id="id_image" width="420px" height="360px"></td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="dlg-image-buttons">
+        <a href="#" class="easyui-linkbutton" iconCls="icon-cancel"
+           onclick="javascript:$('#dlg-image').dialog('close')">取消</a>
+    </div>
+{% endblock %}

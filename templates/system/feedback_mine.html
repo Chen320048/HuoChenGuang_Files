@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+var url;
+
+$(document).ready(function(){
+    add();
+});
+
+
+function add(){
+	$('#dlg-edit').dialog('open').dialog('setTitle','发表建议');
+	$('#fm').form('reset');
+}
+
+function save(btn){
+	$('#fm').form('submit',{
+		url: '/system/feedback/save/',
+		onSubmit: function(){
+		    var valid = $.submitValidate('#fm');
+		    if(valid) $(btn).linkbutton("disable");
+			return valid;
+		},
+		success: function(result){
+			result = eval('('+result+')');
+			if (result.success){
+				$('#dlg-edit').dialog('close');
+				$('#datagrid').datagrid('reload');
+			} else {
+				$.messager.alert('错误', result.errors, 'error');
+			}
+
+			$(btn).linkbutton("enable");
+		}
+	});
+}
+
+function del(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+		$.messager.confirm('提醒','确定要删除吗?',function(r){
+			if (r){
+				$.get('/system/feedback/delete/?id='+row.id,function(result){
+					result = eval('('+result+')');
+					if (result.success){
+						$('#datagrid').datagrid('reload');
+					} else {
+						$.messager.alert('错误', result.errors, 'error');
+					}
+				});
+			}
+		});
+	}
+}
+
+function reply(){
+	var row = $('#datagrid').datagrid('getSelected');
+	if (row){
+        $.messager.prompt('回复', '请输入回复内容:', function(r){
+            r = $.trim(r);
+            if (r){
+                $.post('/system/feedback/reply/',{id:row.id, content:r}, function(result){
+                    result = eval('('+result+')');
+                    if (result.success){
+                        $('#datagrid').datagrid('reload');
+                    } else {
+                        $.messager.alert('错误', result.errors, 'error');
+                    }
+                });
+            }
+            else
+                $.messager.alert('提示', '没有输入内容，操作取消！', 'warning');
+        });
+	}
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}系统管理 > 建议反馈 {% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+			url="/system/feedback/mine/data/"
+			toolbar="#toolbar"
+			pagination="true"
+	   		fit="true"
+			singleSelect="true"
+	   		fitColumns="true"
+			pageSize="{{settings.PAGE_SIZE}}"
+			idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+        <tr>
+            <th field="type_text" width="50">类别</th>
+            <th field="content" width="400">内容</th>
+			<th field="create_time" width="120">时间</th>
+			<th field="reply_content" width="400">回复</th>
+        </tr>
+    </thead>
+</table>
+
+<div id="toolbar">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="add()">发表</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="del()">删除</a>
+</div>
+
+<div id="dlg-edit" class="easyui-dialog" style="width:600px;"
+		closed="true" buttons="#dlg-buttons">
+	<form id="fm" method="post" novalidate>
+        <table class="table-edit" width="100%" cellspacing=0 cellpadding=0 border=0>
+		{% csrf_token %}
+		{% for field in form.visible_fields %}
+			<tr>
+				<th>{{field.label_tag}}</th>
+				<td>{{field}}<span id="err_{{field.name}}" class="error_info"></span><div>{{field.help_text}}</div>
+				</td>
+			</tr>
+         {% endfor %}
+        </table>
+		{% for field in form.hidden_fields %}
+		{{ field }}
+		{% endfor %}
+	</form>
+</div>
+
+<div id="dlg-buttons">
+	<a href="#" class="easyui-linkbutton" iconCls="icon-ok" onclick="save()">保存</a>
+	<a href="#" class="easyui-linkbutton" iconCls="icon-cancel" onclick="javascript:$('#dlg-edit').dialog('close')">取消</a>
+</div>
+
+{% endblock %}

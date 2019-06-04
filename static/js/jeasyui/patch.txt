@@ -1,0 +1,11 @@
+jquery.easyui.min.js
+
+return row[opts.textField].indexOf(q)>-1;//将从头位置匹配改为任意匹配  
+},formatter:function(row){  
+var opts=$(this).combobox("options");  
+return row[opts.textField];  
+},loader:function(_7c9,_7ca,_7cb){  
+var opts=$(this).combobox("options");  
+if(!opts.url){  
+return false;  
+}  

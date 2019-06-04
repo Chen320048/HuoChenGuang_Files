@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <link rel="stylesheet" href="/static/css/amazeui.css"/>
+  <link rel="stylesheet" href="/static/css/base_def.css"/>
+  <!--<script type="text/javascript" src="assets/js/amazeui.js"></script>-->
+</head>
+<body class="cs-bg-eee">
+
+<div class="am-g h10-h"><!--灰高10px--></div>
+
+<div class="am-g cs-bg-fff">
+	<div class="cs-text-c mtb30" style="text-align:center">
+		<img src="/media/user/promoting/{{ user.id }}.png" width="200" height="200">
+	</div>
+
+	<div class="wdtg-anniu">推广码：{{ user.username }}</div>
+
+	<div class="am-g h10-h"><!--灰高10px--></div>
+
+	<div class="cs-bg-fff">
+		<div class="kclb-tit"><span>课程目录</span></div>
+	</div>
+
+  <div class="ft16 pad20">
+      {% for row in rows %}
+		推广注册用户首次购买{{ row.name }}奖励，{{ row.commission }}元<br />
+      {% endfor %}
+	</div>
+
+</div>
+
+</body>
+</html>

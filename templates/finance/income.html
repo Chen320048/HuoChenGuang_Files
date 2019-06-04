@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block js %}
+<script>
+    var _params = {
+    q:'',
+    keyword:''
+};
+function search(value,name){
+	_params = {
+        q:name,
+        keyword:value
+    };
+    $('#datagrid').datagrid('load',_params);
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}财务管理 > 收益记录{% endblock %}
+{% block content %}
+<table id="datagrid" class="easyui-datagrid"
+       url="/finance/income/data/"
+       toolbar="#toolbar"
+       pagination="true"
+       fit="true"
+       fitColumns="true"
+       singleSelect="true"
+       pageSize="{{ settings.PAGE_SIZE }}"
+       showFooter="true"
+       idField='id' nowrap="false" striped="true" border="true" rownumbers="true">
+    <thead>
+    <tr>
+        <th field="order_no" width="120">订单号</th>
+        <th field="order_type_text" width="60">订单类别</th>
+        <th field="order_total_fee" width="80" align="right">订单金额</th>
+        <th field="ratio" width="60" align="right">占比%</th>
+        <th field="total_fee" width="80" align="right">收益金额</th>
+        <th field="balance_before" width="80" align="right">收入前余额</th>
+        <th field="balance_after" width="80" align="right">收入后余额</th>
+        <th field="create_time" width="120">收入时间</th>
+    </tr>
+    </thead>
+</table>
+
+{% endblock %}
